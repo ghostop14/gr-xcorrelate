@@ -1,0 +1,39 @@
+id: xcorrelate_ExtractDelay
+label: Extract Delay
+category: '[Cross Correlation]'
+
+parameters:
+-   id: index_to_extract
+    label: Desired Index
+    dtype: int
+    default: 0
+-   id: target
+    label: Variable
+    dtype: string
+    default: 'delay_0'
+-   id: lock
+    label: Lock Output
+    dtype: bool
+    default: 'False'
+    hide: part
+
+inputs:
+-   domain: message
+    id: corr
+
+outputs:
+-   domain: message
+    id: delay
+    optional: true
+
+templates:
+    imports: import xcorrelate
+    make: xcorrelate.ExtractDelay(${index_to_extract},${ 'self.set_' + context.get('target')() }, ${lock})
+    
+    callbacks:
+    - set_lock(${lock})
+
+documentation: |-
+    This block works with the xcorrelate block correlation message output.  It will extract the desired delay from the correlated_lags output vector.  Note that for signals going into that block, signal[1] will be referenced as index 0 in the output vectors.
+
+file_format: 1
