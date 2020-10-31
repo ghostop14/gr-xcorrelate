@@ -54,6 +54,11 @@ xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_typ
 		exit(1);
 	}
 
+	if ( (d_signal_length % 2) > 0) {
+		GR_LOG_ERROR(d_logger, "Signal length must be a multiple of 2.");
+		exit(1);
+	}
+
 	// Set up local buffers
 	size_t mem_alignment = volk_get_alignment();
 	int mem_alloc_size = d_signal_length * sizeof(float);

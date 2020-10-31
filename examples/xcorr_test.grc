@@ -36,7 +36,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: 162.425e6
+    value: 95.7e6
   states:
     bus_sink: false
     bus_source: false
@@ -999,7 +999,7 @@ blocks:
     norm_gain9: 'False'
     num_mboards: '1'
     otw: ''
-    rx_agc0: Default
+    rx_agc0: Disabled
     rx_agc1: Default
     rx_agc10: Default
     rx_agc11: Default
