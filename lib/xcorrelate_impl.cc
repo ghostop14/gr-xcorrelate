@@ -236,6 +236,72 @@ xcorrelate_impl::xcorr(int num_items, float& corr, int& lag) {
 }
 
 int
+xcorrelate_impl::work_test(int noutput_items,
+		gr_vector_const_void_star &input_items,
+		gr_vector_void_star &output_items)
+{
+	if (noutput_items < d_signal_length) {
+		return 0;
+	}
+
+	gr::thread::scoped_lock guard(d_setlock);
+
+	if (d_decim_frames > 1) {
+		// Let's see if we should drop some frames.
+		if ((cur_frame_counter++ % d_decim_frames) == 0) {
+			cur_frame_counter = 1;
+		}
+		else {
+			return d_signal_length;
+		}
+	}
+	// Processing note:
+	// We set output multiple to d_signal_length in the constructor,
+	// so noutput_items will be a multiple of, and >= d_signal_length.
+
+	// Calculate the reference signal mag just once
+	if (d_data_type == XCORR_COMPLEX) {
+		const gr_complex *ref_signal = (const gr_complex *) input_items[0];
+		volk_32fc_magnitude_32f(ref_mag_buffer,ref_signal,d_signal_length);
+	}
+	else {
+		// already got complex->mag or float inputs, just need to move it
+		// to the mag buffer
+		const float *ref_signal = (const float *) input_items[0];
+
+		memcpy(ref_mag_buffer, ref_signal,d_signal_length*d_data_size);
+	}
+
+	// Calculate the reference signal squared just once.
+	volk_32f_x2_multiply_32f(xx_buffer,ref_mag_buffer,ref_mag_buffer,d_signal_length);
+
+	// Cross correlation will shift signal noutput_items forward and backward
+	// and calculate a normalized correlation factor for each shift.
+
+	float corr;
+	int lag;
+
+	for (int signal_index=1;signal_index<d_num_inputs;signal_index++) {
+		if (d_data_type == XCORR_COMPLEX) {
+			const gr_complex *in2 = (const gr_complex *) input_items[signal_index];
+			volk_32fc_magnitude_32f(mag_buffer,in2,d_signal_length);
+		}
+		else {
+			const float *next_signal = (const float *) input_items[signal_index];
+			memcpy(mag_buffer, next_signal,d_signal_length*d_data_size);
+		}
+		xcorr(d_signal_length, corr, lag);
+
+		// Output vector is # of signals - 1 since xcorr of 1 with itself will always be 1.
+		correlation_factors[signal_index-1] = corr;
+		corrective_lag[signal_index-1] = lag;
+	}
+
+	// Tell runtime system how many output items we produced.
+	return d_signal_length;
+}
+
+int
 xcorrelate_impl::work(int noutput_items,
 		gr_vector_const_void_star &input_items,
 		gr_vector_void_star &output_items)

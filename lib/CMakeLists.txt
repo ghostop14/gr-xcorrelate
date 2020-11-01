@@ -54,6 +54,26 @@ include(GrMiscUtils)
 GR_LIBRARY_FOO(gnuradio-xcorrelate)
 
 ########################################################################
+# Build and register test-xcorrelate
+########################################################################
+list(APPEND test_xcorrelator_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/test-xcorrelate.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/xcorrelate_impl.cc
+)
+
+add_executable(test-xcorrelator ${test_xcorrelator_sources})
+
+target_link_libraries(
+  test-xcorrelator
+  ${GNURADIO_RUNTIME_LIBRARIES}
+  ${Boost_LIBRARIES}
+  gnuradio-xcorrelate
+)
+
+install(TARGETS test-xcorrelator DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" RUNTIME)
+
+
+########################################################################
 # Print summary
 ########################################################################
 message(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")
