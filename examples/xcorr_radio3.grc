@@ -219,7 +219,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '500'
+    value: '512'
   states:
     bus_sink: false
     bus_source: false
@@ -2184,12 +2184,13 @@ blocks:
   parameters:
     affinity: '0'
     alias: ''
+    async: 'True'
     comment: ''
     decim_frames: corr_frame_decim
     max_search_offset: max_search
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_inputs: '2'
+    num_inputs: '3'
     signal_length: corr_frame_size
     type: float
   states:
@@ -2197,26 +2198,6 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [784, 608.0]
-    rotation: 0
-    state: enabled
-- name: xcorrelate_xcorrelate_0_0
-  id: xcorrelate_xcorrelate
-  parameters:
-    affinity: '2'
-    alias: ''
-    comment: ''
-    decim_frames: corr_frame_decim
-    max_search_offset: max_search
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_inputs: '2'
-    signal_length: corr_frame_size
-    type: float
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [800, 704.0]
     rotation: 0
     state: enabled
 
@@ -2227,9 +2208,8 @@ connections:
 - [blocks_add_xx_0, '0', qtgui_freq_sink_x_0_0, '0']
 - [blocks_add_xx_0, '0', qtgui_waterfall_sink_x_0, '0']
 - [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_0, '0']
-- [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_0_0, '0']
 - [blocks_complex_to_mag_0_0, '0', xcorrelate_xcorrelate_0, '1']
-- [blocks_complex_to_mag_0_0_0, '0', xcorrelate_xcorrelate_0_0, '1']
+- [blocks_complex_to_mag_0_0_0, '0', xcorrelate_xcorrelate_0, '2']
 - [blocks_delay_0_0_0, '0', blocks_add_xx_0, '1']
 - [blocks_delay_0_0_0_0, '0', blocks_add_xx_0, '2']
 - [blocks_keep_one_in_n_0, '0', analog_wfm_rcv_0, '0']
@@ -2260,7 +2240,7 @@ connections:
 - [rtlsdr_source_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0, '0']
 - [rtlsdr_source_0_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0_0, '0']
 - [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0, corr]
-- [xcorrelate_xcorrelate_0_0, corr, xcorrelate_ExtractDelay_0_0, corr]
+- [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0_0, corr]
 
 metadata:
   file_format: 1

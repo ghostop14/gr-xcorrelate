@@ -4,16 +4,24 @@ XCorrelate is dedicated to perfroming cross-correlation of signals such that the
 
 There are several example flowgraphs including a test flowgraph that lets you control the input delay to watch the block adapt, and cross-correlation examples for 2, 3, and 4 input setups.  Note that for the xcorr_radio2, 3, and 4 input examples, a radio station is used as the target with RTLSDR's.  As a result, gr-correctiq blocks are used there to remove the DC spike, and gr-lfast's FFT Filter wrapper is used for better CPU performance on the required filters.  So you may want to install those OOT's as well with those examples.
 
-With the tunable settings set in the flowgraph (including block CPU affinity pinning), the correlation flowgraphs run at about 50-60% CPU on an older i7 6th gen CPU/laptop.  The following combinations appear to produce decent correlations.  A radio station with audio out decoding was used to audibly detect when the flowgraph was having issues keeping up such as choppy output, audio underruns, or input overruns.
+One design element that was incorporated to keep flowgraph performance optimal is two runtime modes: asynchronous or sequential.  Since we're acting as a sink block and don't need to output realtime streams of data, async mode can take a block of samples for processing, and pass them to another thread for processing in parallel.  The work function can then just return that it processed the samples until the other thread's processing is complete.  At which point the worker thread will signal the work function that it should produce the appropriate PDUs on the main thread and pick up the next block.  This allows the block to correlate as quickly as possible without holding up processing, and should allow for correlation at any flowgraph sample rate.  This also prevents the delay blocks from receiving buffer changes every frame.  In sequential mode, the work function will block until processing is completed, which in some scenarios may be the more appropriate approach.  Async is the default mode for the block.
 
-These settings worked okay on the test system:
+Another design element that was included is some user-level tuning using 3 configurable parameters:
+
+1. Analysis Window - This defines how many samples should be considered for a single correlation calculation.  The default is 8192.
+
+2. Max Index Search Range - This defines how many samples in either shift direction (forward/backward) should be analyzed.  The default is 512.  More searches does require extra processing time, so this parameter also serves as one mechanism to regulate processing time.  Also, if correlation gets too small at the end of the analysis window, it is expected that incorrect offsets could be returned.  So setting this value to say 10-30% of the analysis window minimizes potentially incorrect results.
+
+3. Keep 1 in N Frames - This mechanism can be used to minimize how frequently new delay updates are generated.  For stationary signals, the delays may not change that frequently, so no need to burden down the system and keep producing new varying delay values.  By default this value is 4 and applies to both asynchronous and sequential modes (in async mode, the 1-in-N is calculated from when processing completes and is less deterministic.  In sequential mode, it is truly a deterministic calcualtion).
+
+These settings worked well on the test system:
  - RTL-SDR (2, 3, and 4 RTL-SDRs simultaneously): Sample rate: 2.4e6, frame size: 8192, max_search: 1000, 1-in-N frames: 4 to 6
  - UHD with UI controls: sample rate: *25e6*, frame size: 8192, max_search 500, 1-in-N frames: 100
  - UHD with no GUI: sample rate: *40e6*, frame size: 8192, max_search 400, 1-in-N frames: 200
 
 Note: For the multiple RTL-SDR setup, a kerberossdr setup gave the best output quality.
 
-Also keep an eye out on gr-clenabled as this will get ported to OpenCL for GPU processing soon.
+For those with GPUs available, there is also an OpenCL implementation of this block in gr-clenabled (just make sure if you're on GNURadio 3.8 that you select the maint-3.8 branch when cloning).
 
 ## Building
 Build is pretty standard:

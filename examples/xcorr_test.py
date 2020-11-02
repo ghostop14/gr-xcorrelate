@@ -103,7 +103,7 @@ class xcorr_test(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(0, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self.xcorrelate_xcorrelate_0 = xcorrelate.xcorrelate(2,corr_frame_size,2,gr.sizeof_float,max_search,corr_frame_decim)
+        self.xcorrelate_xcorrelate_0 = xcorrelate.xcorrelate(2,corr_frame_size,2,gr.sizeof_float,max_search,corr_frame_decim,True)
         self.xcorrelate_xcorrelate_0.set_processor_affinity([0])
         self.xcorrelate_ExtractDelay_0 = xcorrelate.ExtractDelay(0,self.set_delay_0, False)
         self.uhd_usrp_source_0 = uhd.usrp_source(

@@ -30,10 +30,10 @@ namespace gr {
 namespace xcorrelate {
 
 xcorrelate::sptr
-xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size, int max_search_index,int decim_frames)
+xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size, int max_search_index,int decim_frames, bool async)
 {
 	return gnuradio::get_initial_sptr
-			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames));
+			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames, async));
 }
 
 
@@ -41,12 +41,12 @@ xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size,
  * The private constructor
  */
 xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-		int decim_frames)
+		int decim_frames, bool async)
 : gr::sync_block("xcorrelate",
 		gr::io_signature::make(2, num_inputs, data_size),
 		gr::io_signature::make(0, 0, 0)),
 		d_num_inputs(num_inputs), d_signal_length(signal_length), d_data_type(data_type),
-		d_data_size(data_size), d_decim_frames(decim_frames), cur_frame_counter(1)
+		d_data_size(data_size), d_decim_frames(decim_frames), max_shift(max_search_index), d_async(async), cur_frame_counter(1)
 {
 	if (data_size == 0) {
 		// Had to wait to get insider here for access to d_logger
@@ -74,11 +74,19 @@ xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_typ
 
 	message_port_register_out(pmt::mp("corr"));
 
-	if (max_search_index > 0) {
-		max_shift = max_search_index;
-	}
-	else {
+	if (max_search_index == 0) {
 		max_shift = (int)(0.7 * (float)d_signal_length);
+	}
+
+	if (d_async) {
+		if (d_data_type == XCORR_COMPLEX) {
+			d_input_buffer_complex = new gr_complex[d_signal_length * d_num_inputs];
+		}
+		else {
+			d_input_buffer_real = new float[d_signal_length * d_num_inputs];
+		}
+
+		proc_thread = new boost::thread(boost::bind(&xcorrelate_impl::runThread, this));
 	}
 
 	// signal_length represents how long a signal in terms of chunk of samples
@@ -87,6 +95,26 @@ xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_typ
 }
 
 bool xcorrelate_impl::stop() {
+	if (proc_thread) {
+		stop_thread = true;
+
+		while (threadRunning)
+			usleep(10);
+
+		delete proc_thread;
+		proc_thread = NULL;
+
+		if (d_input_buffer_complex) {
+			delete d_input_buffer_complex;
+			d_input_buffer_complex = NULL;
+		}
+
+		if (d_input_buffer_real) {
+			delete d_input_buffer_real;
+			d_input_buffer_real = NULL;
+		}
+	}
+
 	if (correlation_factors) {
 		delete[] correlation_factors;
 		correlation_factors = NULL;
@@ -312,68 +340,163 @@ xcorrelate_impl::work(int noutput_items,
 
 	gr::thread::scoped_lock guard(d_setlock);
 
-	if (d_decim_frames > 1) {
-		// Let's see if we should drop some frames.
-		if ((cur_frame_counter++ % d_decim_frames) == 0) {
-			cur_frame_counter = 1;
+	if (!d_async) {
+		if (d_decim_frames > 1) {
+			// Let's see if we should drop some frames.
+			if ((cur_frame_counter++ % d_decim_frames) == 0) {
+				cur_frame_counter = 1;
+			}
+			else {
+				return d_signal_length;
+			}
+		}
+		// Processing note:
+		// We set output multiple to d_signal_length in the constructor,
+		// so noutput_items will be a multiple of, and >= d_signal_length.
+
+		// Calculate the reference signal mag just once
+		if (d_data_type == XCORR_COMPLEX) {
+			const gr_complex *ref_signal = (const gr_complex *) input_items[0];
+			volk_32fc_magnitude_32f(ref_mag_buffer,ref_signal,d_signal_length);
 		}
 		else {
-			return d_signal_length;
-		}
-	}
-	// Processing note:
-	// We set output multiple to d_signal_length in the constructor,
-	// so noutput_items will be a multiple of, and >= d_signal_length.
+			// already got complex->mag or float inputs, just need to move it
+			// to the mag buffer
+			const float *ref_signal = (const float *) input_items[0];
 
-	// Calculate the reference signal mag just once
-	if (d_data_type == XCORR_COMPLEX) {
-		const gr_complex *ref_signal = (const gr_complex *) input_items[0];
-		volk_32fc_magnitude_32f(ref_mag_buffer,ref_signal,d_signal_length);
+			memcpy(ref_mag_buffer, ref_signal,d_signal_length*d_data_size);
+		}
+
+		// Calculate the reference signal squared just once.
+		volk_32f_x2_multiply_32f(xx_buffer,ref_mag_buffer,ref_mag_buffer,d_signal_length);
+
+		// Cross correlation will shift signal noutput_items forward and backward
+		// and calculate a normalized correlation factor for each shift.
+
+		float corr;
+		int lag;
+
+		for (int signal_index=1;signal_index<d_num_inputs;signal_index++) {
+			if (d_data_type == XCORR_COMPLEX) {
+				const gr_complex *in2 = (const gr_complex *) input_items[signal_index];
+				volk_32fc_magnitude_32f(mag_buffer,in2,d_signal_length);
+			}
+			else {
+				const float *next_signal = (const float *) input_items[signal_index];
+				memcpy(mag_buffer, next_signal,d_signal_length*d_data_size);
+			}
+			xcorr(d_signal_length, corr, lag);
+
+			// Output vector is # of signals - 1 since xcorr of 1 with itself will always be 1.
+			correlation_factors[signal_index-1] = corr;
+			corrective_lag[signal_index-1] = lag;
+		}
+
+		pmt::pmt_t meta = pmt::make_dict();
+		pmt::pmt_t corr_out(pmt::init_f32vector(d_num_inputs-1,correlation_factors));
+		meta = pmt::dict_add(meta, pmt::mp("corrvect"), corr_out);
+		pmt::pmt_t lag_out(pmt::init_s32vector(d_num_inputs-1,corrective_lag));
+		meta = pmt::dict_add(meta, pmt::mp("corrective_lags"), lag_out);
+
+		pmt::pmt_t pdu = pmt::cons(meta, pmt::PMT_NIL);
+		message_port_pub(pmt::mp("corr"), pdu);
 	}
 	else {
-		// already got complex->mag or float inputs, just need to move it
-		// to the mag buffer
-		const float *ref_signal = (const float *) input_items[0];
+		// Async mode.  See if the thread is currently processing any data or not.
+		if (!thread_process_data) {
+			if (d_decim_frames > 1) {
+				// For async mode, we'll need to do this here.
+				// Let's see if we should drop some frames.
+				if ((cur_frame_counter++ % d_decim_frames) == 0) {
+					cur_frame_counter = 1;
+				}
+				else {
+					return d_signal_length;
+				}
+			}
 
-		memcpy(ref_mag_buffer, ref_signal,d_signal_length*d_data_size);
-	}
+			// Copy the input signals to our local buffer for processing and trigger.
+			for (int i=0;i<d_num_inputs;i++) {
+				if (d_data_type == XCORR_COMPLEX) {
+					memcpy(&d_input_buffer_complex[d_signal_length*i],input_items[i],d_signal_length*d_data_size);
+				}
+				else {
+					memcpy(&d_input_buffer_real[d_signal_length*i],input_items[i],d_signal_length*d_data_size);
+				}
+			}
 
-	// Calculate the reference signal squared just once.
-	volk_32f_x2_multiply_32f(xx_buffer,ref_mag_buffer,ref_mag_buffer,d_signal_length);
+			// thread_is_processing will only be FALSE if thread_process_data == false on the first pass,
+			// in which case we don't want to send any pmt's.  Otherwise, we're in async pickup mode.
+			if (thread_is_processing) {
+				pmt::pmt_t meta = pmt::make_dict();
+				pmt::pmt_t corr_out(pmt::init_f32vector(d_num_inputs-1,correlation_factors));
+				meta = pmt::dict_add(meta, pmt::mp("corrvect"), corr_out);
+				pmt::pmt_t lag_out(pmt::init_s32vector(d_num_inputs-1,corrective_lag));
+				meta = pmt::dict_add(meta, pmt::mp("corrective_lags"), lag_out);
 
-	// Cross correlation will shift signal noutput_items forward and backward
-	// and calculate a normalized correlation factor for each shift.
+				pmt::pmt_t pdu = pmt::cons(meta, pmt::PMT_NIL);
+				message_port_pub(pmt::mp("corr"), pdu);
+			}
 
-	float corr;
-	int lag;
-
-	for (int signal_index=1;signal_index<d_num_inputs;signal_index++) {
-		if (d_data_type == XCORR_COMPLEX) {
-			const gr_complex *in2 = (const gr_complex *) input_items[signal_index];
-			volk_32fc_magnitude_32f(mag_buffer,in2,d_signal_length);
+			// clear the flag
+			thread_process_data = true;
 		}
-		else {
-			const float *next_signal = (const float *) input_items[signal_index];
-			memcpy(mag_buffer, next_signal,d_signal_length*d_data_size);
-		}
-		xcorr(d_signal_length, corr, lag);
-
-		// Output vector is # of signals - 1 since xcorr of 1 with itself will always be 1.
-		correlation_factors[signal_index-1] = corr;
-		corrective_lag[signal_index-1] = lag;
+		// The else with this is that the thread is processing, and we're just going to pass through.
 	}
-
-	pmt::pmt_t meta = pmt::make_dict();
-	pmt::pmt_t corr_out(pmt::init_f32vector(d_num_inputs-1,correlation_factors));
-	meta = pmt::dict_add(meta, pmt::mp("corrvect"), corr_out);
-	pmt::pmt_t lag_out(pmt::init_s32vector(d_num_inputs-1,corrective_lag));
-	meta = pmt::dict_add(meta, pmt::mp("corrective_lags"), lag_out);
-
-	pmt::pmt_t pdu = pmt::cons(meta, pmt::PMT_NIL);
-	message_port_pub(pmt::mp("corr"), pdu);
 
 	// Tell runtime system how many output items we produced.
 	return d_signal_length;
+}
+
+void xcorrelate_impl::runThread() {
+	threadRunning = true;
+
+	while (!stop_thread) {
+		if (thread_process_data) {
+			// This is really a one-time variable set to true on the first pass.
+			thread_is_processing = true;
+
+			// Trigger received to process data.
+			// Calculate the reference signal mag just once
+			if (d_data_type == XCORR_COMPLEX) {
+				volk_32fc_magnitude_32f(ref_mag_buffer,d_input_buffer_complex,d_signal_length);
+			}
+			else {
+				// already got complex->mag or float inputs, just need to move it
+				// to the mag buffer
+				memcpy(ref_mag_buffer, d_input_buffer_real,d_signal_length*d_data_size);
+			}
+
+			// Calculate the reference signal squared just once.
+			volk_32f_x2_multiply_32f(xx_buffer,ref_mag_buffer,ref_mag_buffer,d_signal_length);
+
+			// Cross correlation will shift signal noutput_items forward and backward
+			// and calculate a normalized correlation factor for each shift.
+
+			float corr;
+			int lag;
+
+			for (int signal_index=1;signal_index<d_num_inputs;signal_index++) {
+				if (d_data_type == XCORR_COMPLEX) {
+					volk_32fc_magnitude_32f(mag_buffer,&d_input_buffer_complex[d_signal_length * signal_index],d_signal_length);
+				}
+				else {
+					memcpy(mag_buffer, &d_input_buffer_real[d_signal_length * signal_index],d_signal_length*d_data_size);
+				}
+				xcorr(d_signal_length, corr, lag);
+
+				// Output vector is # of signals - 1 since xcorr of 1 with itself will always be 1.
+				correlation_factors[signal_index-1] = corr;
+				corrective_lag[signal_index-1] = lag;
+			}
+
+			// clear the trigger.  This will inform that data is ready.
+			thread_process_data = false;
+		}
+		usleep(10);
+	}
+
+	threadRunning = false;
 }
 
 } /* namespace xcorrelate */

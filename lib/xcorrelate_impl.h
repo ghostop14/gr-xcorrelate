@@ -22,6 +22,7 @@
 #define INCLUDED_XCORRELATE_XCORRELATE_IMPL_H
 
 #include <xcorrelate/xcorrelate.h>
+#include <boost/thread/thread.hpp>
 
 // These are also set to align with DTYPEs in gr-clenabled
 #define XCORR_COMPLEX 1
@@ -40,6 +41,7 @@ namespace gr {
       int d_decim_frames;
       int cur_frame_counter;
       int max_shift;
+      bool d_async;
 
       // Internal buffers
       float *ref_mag_buffer;
@@ -53,12 +55,25 @@ namespace gr {
       float *correlation_factors;
       int *corrective_lag;
 
+		// For async mode, threading:
+      boost::thread *proc_thread=NULL;
+      bool threadRunning=false;
+      bool stop_thread = false;
+	  bool thread_is_processing=false;
+	  bool thread_process_data=false;
+
+	  // These are used to store our working buffer in async mode.
+	  gr_complex *d_input_buffer_complex=NULL;
+	  float *d_input_buffer_real=NULL;
+
       // xcorr expects ref_mag_buffer and mag_buffer to be pre-loaded.
       void xcorr(int num_items, float& corr, int& lag);
 
+	  virtual void runThread();
+
      public:
       xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames);
+    		  int decim_frames, bool async=false);
       ~xcorrelate_impl();
 
       bool stop();

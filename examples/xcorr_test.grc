@@ -1083,6 +1083,7 @@ blocks:
   parameters:
     affinity: '0'
     alias: ''
+    async: 'True'
     comment: ''
     decim_frames: corr_frame_decim
     max_search_offset: max_search
