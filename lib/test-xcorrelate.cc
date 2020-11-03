@@ -62,7 +62,7 @@ bool testXCorrelate() {
 			input_size=sizeof(float);
 		}
 
-		test = new gr::xcorrelate::xcorrelate_impl(num_inputs, largeBlockSize, input_type, input_size, maxsearch, decimation);
+		test = new gr::xcorrelate::xcorrelate_impl(num_inputs, largeBlockSize, input_type, input_size, maxsearch, decimation,0,false);
 	}
 	catch (...) {
 		std::cout << "ERROR: error setting up environment." << std::endl;
