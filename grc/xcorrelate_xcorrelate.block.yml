@@ -54,7 +54,7 @@ outputs:
 
 templates:
   imports: import xcorrelate
-  make: xcorrelate.xcorrelate(${num_inputs},${signal_length},${type.data_type},${type.size},${max_search_offset},${decim_frames},${async})
+  make: xcorrelate.xcorrelate(${num_inputs},${signal_length},${type.data_type},${type.size},${max_search_offset},${decim_frames},0,${async})
 
 documentation: "For signal inputs 0..N, this block will cross-correlate each signal\
     \ in the range 1..n against signal 0 (reference signal).\
