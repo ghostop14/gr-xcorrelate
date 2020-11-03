@@ -212,7 +212,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '1000'
+    value: '2048'
   states:
     bus_sink: false
     bus_source: false

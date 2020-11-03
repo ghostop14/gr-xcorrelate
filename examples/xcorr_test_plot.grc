@@ -10,7 +10,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: xcorr_test
+    id: xcorr_test_plot
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -144,7 +144,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '2048'
+    value: '512'
   states:
     bus_sink: false
     bus_source: false
@@ -266,6 +266,24 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [488, 396.0]
+    rotation: 0
+    state: true
+- name: blocks_keep_one_in_n_1
+  id: blocks_keep_one_in_n
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '100'
+    type: float
+    vlen: 2*corr_frame_size
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1064, 444.0]
     rotation: 0
     state: true
 - name: blocks_max_xx_0
@@ -421,7 +439,7 @@ blocks:
     fftsize: '1024'
     freqhalf: 'True'
     grid: 'False'
-    gui_hint: 1,0,2,4
+    gui_hint: 1,0,2,2
     label: Relative Gain
     label1: Reference
     label10: ''''''
@@ -458,7 +476,7 @@ blocks:
     width9: '1'
     wintype: firdes.WIN_BLACKMAN_hARRIS
     ymax: '10'
-    ymin: '-140'
+    ymin: '-100'
   states:
     bus_sink: false
     bus_source: false
@@ -687,6 +705,79 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [872, 292.0]
+    rotation: 0
+    state: true
+- name: qtgui_vector_sink_f_0
+  id: qtgui_vector_sink_f
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'False'
+    gui_hint: 1,2,2,2
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Correlation Vs. Sample Lag"'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'False'
+    update_time: '0.10'
+    vlen: corr_frame_size*2
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    x_axis_label: '"Corrective Lag"'
+    x_start: -corr_frame_size
+    x_step: '1.0'
+    x_units: '"Samples"'
+    y_axis_label: '"Normalized Correlation"'
+    y_units: '""'
+    ymax: '1.0'
+    ymin: '0.5'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1256, 388.0]
     rotation: 0
     state: true
 - name: uhd_usrp_source_0
@@ -1076,28 +1167,27 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1112, 380.0]
+    coordinate: [1104, 324.0]
     rotation: 0
     state: enabled
-- name: xcorrelate_xcorrelate_0
-  id: xcorrelate_xcorrelate
+- name: xcorrelate_xcorrelate_xtream_0
+  id: xcorrelate_xcorrelate_xtream
   parameters:
-    affinity: '0'
+    affinity: ''
     alias: ''
-    async: 'True'
     comment: ''
-    decim_frames: corr_frame_decim
-    max_search_offset: max_search
+    decim_frames: '6'
+    max_search_offset: '256'
     maxoutbuf: '0'
     minoutbuf: '0'
     num_inputs: '2'
-    signal_length: corr_frame_size
+    signal_length: '8192'
     type: float
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [880, 400.0]
+    coordinate: [872, 432.0]
     rotation: 0
     state: true
 
@@ -1106,14 +1196,15 @@ connections:
 - [blocks_add_xx_0, '0', logpwrfft_x_0_0, '0']
 - [blocks_add_xx_0, '0', qtgui_freq_sink_x_0, '2']
 - [blocks_complex_to_mag_0, '0', qtgui_time_sink_x_0, '0']
-- [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_0, '0']
+- [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_xtream_0, '0']
 - [blocks_complex_to_mag_0_0, '0', qtgui_time_sink_x_0, '1']
-- [blocks_complex_to_mag_0_0, '0', xcorrelate_xcorrelate_0, '1']
+- [blocks_complex_to_mag_0_0, '0', xcorrelate_xcorrelate_xtream_0, '1']
 - [blocks_complex_to_mag_0_0_0, '0', qtgui_time_sink_x_0, '2']
 - [blocks_delay_0, '0', blocks_complex_to_mag_0_0, '0']
 - [blocks_delay_0, '0', blocks_delay_0_0_0, '0']
 - [blocks_delay_0, '0', qtgui_freq_sink_x_0, '1']
 - [blocks_delay_0_0_0, '0', blocks_add_xx_0, '1']
+- [blocks_keep_one_in_n_1, '0', qtgui_vector_sink_f_0, '0']
 - [blocks_max_xx_0, '0', blocks_sub_xx_0, '0']
 - [blocks_max_xx_0, '0', qtgui_number_sink_0, '0']
 - [blocks_max_xx_0_0, '0', blocks_sub_xx_0, '1']
@@ -1127,7 +1218,8 @@ connections:
 - [uhd_usrp_source_0, '0', blocks_delay_0, '0']
 - [uhd_usrp_source_0, '0', logpwrfft_x_0, '0']
 - [uhd_usrp_source_0, '0', qtgui_freq_sink_x_0, '0']
-- [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0, corr]
+- [xcorrelate_xcorrelate_xtream_0, '0', blocks_keep_one_in_n_1, '0']
+- [xcorrelate_xcorrelate_xtream_0, corr, xcorrelate_ExtractDelay_0, corr]
 
 metadata:
   file_format: 1

@@ -219,7 +219,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '512'
+    value: '2048'
   states:
     bus_sink: false
     bus_source: false
@@ -2180,7 +2180,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    index_to_extract: '0'
+    index_to_extract: '1'
     lock: lock_output
     maxoutbuf: '0'
     minCorrScore: min_corr_score
