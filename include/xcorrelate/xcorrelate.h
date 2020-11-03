@@ -22,7 +22,7 @@
 #define INCLUDED_XCORRELATE_XCORRELATE_H
 
 #include <xcorrelate/api.h>
-#include <gnuradio/sync_block.h>
+#include <gnuradio/sync_decimator.h>
 
 namespace gr {
   namespace xcorrelate {
@@ -32,7 +32,7 @@ namespace gr {
      * \ingroup xcorrelate
      *
      */
-    class XCORRELATE_API xcorrelate : virtual public gr::sync_block
+    class XCORRELATE_API xcorrelate : virtual public gr::sync_decimator
     {
      public:
       typedef boost::shared_ptr<xcorrelate> sptr;
@@ -48,7 +48,7 @@ namespace gr {
        * \param async Flag indicating if a second thread should be used for processing.
        */
       static sptr make(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames, bool async=false);
+    		  int decim_frames, int num_outputs, bool async=false);
     };
 
   } // namespace xcorrelate
