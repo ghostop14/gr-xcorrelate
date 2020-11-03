@@ -41,6 +41,7 @@ namespace gr {
       int d_decim_frames;
       int cur_frame_counter;
       int max_shift;
+      int d_num_outputs;
       bool d_async;
 
       // Internal buffers
@@ -67,13 +68,13 @@ namespace gr {
 	  float *d_input_buffer_real=NULL;
 
       // xcorr expects ref_mag_buffer and mag_buffer to be pre-loaded.
-      void xcorr(int num_items, float& corr, int& lag);
+      void xcorr(int num_items, float& corr, int& lag, float *corr_buffer=NULL);
 
 	  virtual void runThread();
 
      public:
       xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames, bool async=false);
+    		  int decim_frames, int num_outputs, bool async=false);
       ~xcorrelate_impl();
 
       bool stop();
