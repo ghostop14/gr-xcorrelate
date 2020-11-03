@@ -1069,6 +1069,7 @@ blocks:
     index_to_extract: '0'
     lock: 'False'
     maxoutbuf: '0'
+    minCorrScore: '0.6'
     minoutbuf: '0'
     target: delay_0
   states:

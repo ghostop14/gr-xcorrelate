@@ -9,12 +9,13 @@ class ExtractDelay(gr.sync_block):
     This block extracts the delay value for the provided index from the corrective_lags
     meta vector output from the xcorrelate block, and controls a variable.
     """
-    def __init__(self, index_to_extract, callback, lock):
+    def __init__(self, index_to_extract, callback, lock, minCorrScore):
         gr.sync_block.__init__(self, name="ExtractDelay", in_sig=None, out_sig=None)
 
         self.index_to_extract = index_to_extract
         self.callback = callback
         self.lock = lock
+        self.minCorrScore = minCorrScore
 
         self.message_port_register_in(pmt.intern("corr"))
         self.set_msg_handler(pmt.intern("corr"), self.msg_handler)
@@ -45,6 +46,13 @@ class ExtractDelay(gr.sync_block):
             new_delay = int(meta['corrective_lags'][self.index_to_extract])
         except Exception as e:
             gr.log.error("Cannot extract lag info: %s" % str(e))
+            return
+
+        try:
+            if meta['corrvect'][self.index_to_extract] < self.minCorrScore:
+                return
+        except Exception as e:
+            gr.log.error("Cannot extract correlation info: %s" % str(e))
             return
 
         self.callback(new_delay)

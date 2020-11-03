@@ -11,6 +11,11 @@ parameters:
     label: Variable
     dtype: string
     default: 'delay_0'
+-   id: minCorrScore
+    label: Min Correlation Score
+    dtype: float
+    default: '0.8'
+    hide: part
 -   id: lock
     label: Lock Output
     dtype: bool
@@ -28,12 +33,12 @@ outputs:
 
 templates:
     imports: import xcorrelate
-    make: xcorrelate.ExtractDelay(${index_to_extract},${ 'self.set_' + context.get('target')() }, ${lock})
+    make: xcorrelate.ExtractDelay(${index_to_extract},${ 'self.set_' + context.get('target')() }, ${lock}, ${minCorrScore})
     
     callbacks:
     - set_lock(${lock})
 
 documentation: |-
-    This block works with the xcorrelate block correlation message output.  It will extract the desired delay from the correlated_lags output vector.  Note that for signals going into that block, signal[1] will be referenced as index 0 in the output vectors.
+    This block works with the xcorrelate block correlation message output.  It will extract the desired delay from the correlated_lags output vector.  Note that for signals going into that block, signal[1] will be referenced as index 0 in the output vectors.  A minimum correlation score can be set to limit when triggered updates will happen.  Correlation scores will range from -1.0 to 1.0 (exactly correlated).  Setting the value to -1.0 will effectively disable it.  Setting it to 1.0 would require an exact match (which would include system noise).
 
 file_format: 1

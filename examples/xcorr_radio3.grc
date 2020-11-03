@@ -227,6 +227,18 @@ blocks:
     coordinate: [824, 12.0]
     rotation: 0
     state: enabled
+- name: min_corr_score
+  id: variable
+  parameters:
+    comment: ''
+    value: '0.9'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [800, 148.0]
+    rotation: 0
+    state: enabled
 - name: samp_rate
   id: variable
   parameters:
@@ -2152,6 +2164,7 @@ blocks:
     index_to_extract: '0'
     lock: lock_output
     maxoutbuf: '0'
+    minCorrScore: min_corr_score
     minoutbuf: '0'
     target: delay_0
   states:
@@ -2170,6 +2183,7 @@ blocks:
     index_to_extract: '0'
     lock: lock_output
     maxoutbuf: '0'
+    minCorrScore: min_corr_score
     minoutbuf: '0'
     target: delay_1
   states:

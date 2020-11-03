@@ -1710,13 +1710,14 @@ blocks:
     index_to_extract: '0'
     lock: lock_output
     maxoutbuf: '0'
+    minCorrScore: '0.6'
     minoutbuf: '0'
     target: delay_0
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1016, 612.0]
+    coordinate: [976, 628.0]
     rotation: 0
     state: enabled
 - name: xcorrelate_xcorrelate_0
@@ -1724,6 +1725,7 @@ blocks:
   parameters:
     affinity: '0'
     alias: ''
+    async: 'True'
     comment: ''
     decim_frames: corr_frame_decim
     max_search_offset: max_search

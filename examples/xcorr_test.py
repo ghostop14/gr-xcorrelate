@@ -105,7 +105,7 @@ class xcorr_test(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setColumnStretch(c, 1)
         self.xcorrelate_xcorrelate_0 = xcorrelate.xcorrelate(2,corr_frame_size,2,gr.sizeof_float,max_search,corr_frame_decim,True)
         self.xcorrelate_xcorrelate_0.set_processor_affinity([0])
-        self.xcorrelate_ExtractDelay_0 = xcorrelate.ExtractDelay(0,self.set_delay_0, False)
+        self.xcorrelate_ExtractDelay_0 = xcorrelate.ExtractDelay(0,self.set_delay_0, False, 0.6)
         self.uhd_usrp_source_0 = uhd.usrp_source(
             ",".join(("", "num_recv_frames=128")),
             uhd.stream_args(
