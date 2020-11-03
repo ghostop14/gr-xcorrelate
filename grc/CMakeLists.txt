@@ -20,6 +20,8 @@
 
 install(FILES
     xcorrelate_xcorrelate.block.yml
+    xcorrelate_xcorrelate_stream.block.yml
     xcorrelate_ExtractDelay.block.yml 
+    xcorrelate_VectorMaxIndexToVar.block.yml 
     DESTINATION share/gnuradio/grc/blocks
 )
