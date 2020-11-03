@@ -34,3 +34,4 @@ except ImportError:
 # import any pure python here
 #
 from .ExtractDelay import ExtractDelay
+from .VectorMaxIndexToVar import VectorMaxIndexToVar
