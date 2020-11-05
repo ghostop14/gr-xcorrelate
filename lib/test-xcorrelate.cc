@@ -318,6 +318,10 @@ main (int argc, char **argv)
 	bool was_successful;
 
 	was_successful = testXCorrelate();
+
+	if (num_inputs>2) {
+		std::cout << "WARNING: Frquency domain correlation only supports 2 inputs.  Below score is still 2-signal comparison" << std::endl;
+	}
 	was_successful = testFFTXCorrelate();
 	std::cout << std::endl;
 
