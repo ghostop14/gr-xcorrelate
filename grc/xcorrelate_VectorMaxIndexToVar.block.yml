@@ -28,7 +28,6 @@ inputs:
     dtype: float
     vlen: ${vec_len}
 
-
 templates:
     imports: import xcorrelate
     make: xcorrelate.VectorMaxIndexToVar(${ 'self.set_' + context.get('target')() }, ${lock}, ${minCorrScore}, ${vec_len})

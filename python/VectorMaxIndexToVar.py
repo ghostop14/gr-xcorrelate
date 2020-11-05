@@ -33,10 +33,11 @@ class VectorMaxIndexToVar(gr.sync_block):
                 if in0[i] > cur_max:
                     cur_max = in0[i]
                     cur_max_index = i
+                    
             if cur_max > max_val:
                 max_val = cur_max
                 max_index = cur_max_index
-                
+
         if (max_val > self.minCorrScore):
             new_delay = max_index - len(in0)/2
             
