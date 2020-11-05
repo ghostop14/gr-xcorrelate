@@ -14,6 +14,7 @@ class VectorMaxIndexToVar(gr.sync_block):
         self.callback = callback
         self.lock = lock
         self.minCorrScore = minCorrScore
+        self.vec_len = vec_len
 
     def work(self, input_items, output_items):
         if self.lock:
@@ -28,7 +29,7 @@ class VectorMaxIndexToVar(gr.sync_block):
             cur_max = in0[0]
             cur_max_index = 0
             
-            for i in range(1, len(in0)):
+            for i in range(1, self.vec_len):
                 if in0[i] > cur_max:
                     cur_max = in0[i]
                     cur_max_index = i
