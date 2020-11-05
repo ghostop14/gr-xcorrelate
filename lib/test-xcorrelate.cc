@@ -46,6 +46,7 @@ int maxsearch=512;
 int num_inputs = 2;
 int decimation = 1;
 int input_type=XCORR_FLOAT;
+bool fftonly=false;
 
 class comma_numpunct : public std::numpunct<char>
 {
@@ -281,9 +282,9 @@ main (int argc, char **argv)
 		// 1 is the file name
 		if (strcmp(argv[1],"--help")==0) {
 			std::cout << std::endl;
-			std::cout << "Usage: [--input_complex] [--num_inputs=#] [--maxsearch=<search_depth>] [number of samples (default is 8192)]" << std::endl;
+			std::cout << "Usage: [--fftonly] [--input_complex] [--num_inputs=#] [--maxsearch=<search_depth>] [number of samples (default is 8192)]" << std::endl;
 			std::cout << "If not specified, maxsearch will default to 512." << std::endl;
-			std::cout << "--input_complex will switch from float to complex inputs to the test routine." << std::endl;
+			std::cout << "--input_complex will switch the time-domain test from float to complex inputs to the test routine." << std::endl;
 			std::cout << std::endl;
 			exit(0);
 		}
@@ -302,6 +303,9 @@ main (int argc, char **argv)
 			else if (strcmp(argv[i],"--input_complex")==0) {
 				input_type = XCORR_COMPLEX;
 			}
+			else if (strcmp(argv[i],"--fftonly")==0) {
+				fftonly=true;
+			}
 			else if (atoi(argv[i]) > 0) {
 				int newVal=atoi(argv[i]);
 
@@ -317,7 +321,8 @@ main (int argc, char **argv)
 	}
 	bool was_successful;
 
-	was_successful = testXCorrelate();
+	if (!fftonly)
+		was_successful = testXCorrelate();
 
 	if (num_inputs>2) {
 		std::cout << "WARNING: Frquency domain correlation only supports 2 inputs.  Below score is still 2-signal comparison" << std::endl;
