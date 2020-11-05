@@ -35,3 +35,5 @@ except ImportError:
 #
 from .ExtractDelay import ExtractDelay
 from .VectorMaxIndexToVar import VectorMaxIndexToVar
+from .xcorrelate_fft_vcf import xcorrelate_fft_vcf
+

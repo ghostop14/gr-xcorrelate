@@ -23,5 +23,6 @@
 ########################################################################
 install(FILES
     api.h
-    xcorrelate.h DESTINATION include/xcorrelate
+    xcorrelate.h
+    xcorrelate_fft_vcf2.h DESTINATION include/xcorrelate
 )

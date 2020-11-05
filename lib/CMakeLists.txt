@@ -22,10 +22,9 @@
 # Setup library
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
-
 list(APPEND xcorrelate_sources
     xcorrelate_impl.cc
-)
+    xcorrelate_fft_vcf2_impl.cc )
 
 set(xcorrelate_sources "${xcorrelate_sources}" PARENT_SCOPE)
 if(NOT xcorrelate_sources)
@@ -34,7 +33,7 @@ if(NOT xcorrelate_sources)
 endif(NOT xcorrelate_sources)
 
 add_library(gnuradio-xcorrelate SHARED ${xcorrelate_sources})
-target_link_libraries(gnuradio-xcorrelate gnuradio::gnuradio-runtime)
+target_link_libraries(gnuradio-xcorrelate gnuradio::gnuradio-runtime gnuradio-fft)
 target_include_directories(gnuradio-xcorrelate
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
@@ -59,6 +58,7 @@ GR_LIBRARY_FOO(gnuradio-xcorrelate)
 list(APPEND test_xcorrelator_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/test-xcorrelate.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/xcorrelate_impl.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/xcorrelate_fft_vcf2_impl.cc
 )
 
 add_executable(test-xcorrelator ${test_xcorrelator_sources})

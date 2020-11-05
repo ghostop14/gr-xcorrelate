@@ -30,10 +30,11 @@ namespace gr {
 namespace xcorrelate {
 
 xcorrelate::sptr
-xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size, int max_search_index,int decim_frames, int num_outputs, bool async)
+xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size, int max_search_index,int decim_frames, int num_outputs,
+		bool async, bool normalize)
 {
 	return gnuradio::get_initial_sptr
-			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames, num_outputs, async));
+			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames, num_outputs, async, normalize));
 }
 
 
@@ -41,12 +42,13 @@ xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size,
  * The private constructor
  */
 xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-		int decim_frames, int num_outputs, bool async)
+		int decim_frames, int num_outputs, bool async, bool normalize)
 : gr::sync_decimator("xcorrelate",
 		gr::io_signature::make(2, num_inputs, data_size),
 		gr::io_signature::make(0, num_outputs, sizeof(float)*2*signal_length),num_outputs==0?1:signal_length),
 		d_num_inputs(num_inputs), d_signal_length(signal_length), d_data_type(data_type),
-		d_data_size(data_size), d_decim_frames(decim_frames), max_shift(max_search_index), d_num_outputs(num_outputs), d_async(async), cur_frame_counter(1)
+		d_data_size(data_size), d_decim_frames(decim_frames), max_shift(max_search_index), d_num_outputs(num_outputs), d_async(async),
+		d_normalize(normalize), cur_frame_counter(1)
 {
 	if (data_size == 0) {
 		// Had to wait to get insider here for access to d_logger
@@ -181,7 +183,9 @@ xcorrelate_impl::~xcorrelate_impl()
 void
 xcorrelate_impl::xcorr(int num_items, float& corr, int& lag, float *corr_buffer) {
 	// Calc y squared just once
-	volk_32f_x2_multiply_32f(yy_buffer,mag_buffer,mag_buffer,d_signal_length);
+	if (d_normalize) {
+		volk_32f_x2_multiply_32f(yy_buffer,mag_buffer,mag_buffer,d_signal_length);
+	}
 
 	float sum_xy;
 	float sum_x2;
@@ -206,25 +210,34 @@ xcorrelate_impl::xcorr(int num_items, float& corr, int& lag, float *corr_buffer)
 		volk_32f_x2_multiply_32f(xy_buffer,&ref_mag_buffer[ref_start],mag_buffer,calc_len);
 		volk_32f_accumulator_s32f(&sum_xy,xy_buffer,calc_len);
 
-		// x^2 is already calculated once.  Just need to grab the indices we need
-		volk_32f_accumulator_s32f(&sum_x2,&xx_buffer[ref_start],calc_len);
+		if (d_normalize) {
+			// x^2 is already calculated once.  Just need to grab the indices we need
+			volk_32f_accumulator_s32f(&sum_x2,&xx_buffer[ref_start],calc_len);
 
-		// y^2 is already calculated once.  Just need to grab the indices we need
-		volk_32f_accumulator_s32f(&sum_y2,yy_buffer,calc_len);
+			// y^2 is already calculated once.  Just need to grab the indices we need
+			volk_32f_accumulator_s32f(&sum_y2,yy_buffer,calc_len);
+			denom = sum_x2 * sum_y2;
 
-		denom = sum_x2 * sum_y2;
-
-		if (denom != 0.0) {
-			cur_corr = sum_xy / sqrt(sum_x2 * sum_y2);
+			if (denom != 0.0) {
+				cur_corr = sum_xy / sqrt(sum_x2 * sum_y2);
+			}
+			else {
+				cur_corr = -1.0;
+				std::cout << "ERROR: one of the sum terms is zero." << std::endl;
+				std::cout << "Current shift: " << ref_start << std::endl;
+				std::cout << "calc_len: " << calc_len << std::endl;
+				std::cout << "xx[ref_start]: " << xx_buffer[ref_start] << std::endl;
+				std::cout << "sum_x2: " << sum_x2 << std::endl;
+				std::cout << "sum_y2: " << sum_y2 << std::endl;
+			}
 		}
 		else {
-			cur_corr = -1.0;
-			std::cout << "ERROR: one of the sum terms is zero." << std::endl;
-			std::cout << "Current shift: " << ref_start << std::endl;
-			std::cout << "calc_len: " << calc_len << std::endl;
-			std::cout << "xx[ref_start]: " << xx_buffer[ref_start] << std::endl;
-			std::cout << "sum_x2: " << sum_x2 << std::endl;
-			std::cout << "sum_y2: " << sum_y2 << std::endl;
+			cur_corr = sum_xy;
+
+			if (ref_start == 0) {
+				// First time through.  Let's take the first correlation value as the best so far.
+				corr = cur_corr;
+			}
 		}
 
 		if (cur_corr > corr) {
@@ -245,25 +258,30 @@ xcorrelate_impl::xcorr(int num_items, float& corr, int& lag, float *corr_buffer)
 			volk_32f_x2_multiply_32f(xy_buffer,&mag_buffer[ref_start],ref_mag_buffer,calc_len);
 			volk_32f_accumulator_s32f(&sum_xy,xy_buffer,calc_len);
 
-			// x^2 is already calculated once.  Just need to grab the indices we need
-			volk_32f_accumulator_s32f(&sum_x2,xx_buffer,calc_len);
+			if (d_normalize) {
+				// x^2 is already calculated once.  Just need to grab the indices we need
+				volk_32f_accumulator_s32f(&sum_x2,xx_buffer,calc_len);
 
-			// y^2 is already calculated once.  Just need to grab the indices we need
-			volk_32f_accumulator_s32f(&sum_y2,&yy_buffer[ref_start],calc_len);
+				// y^2 is already calculated once.  Just need to grab the indices we need
+				volk_32f_accumulator_s32f(&sum_y2,&yy_buffer[ref_start],calc_len);
 
-			denom = sum_x2 * sum_y2;
+				denom = sum_x2 * sum_y2;
 
-			if (denom != 0.0) {
-				cur_corr = sum_xy / sqrt(sum_x2 * sum_y2);
+				if (denom != 0.0) {
+					cur_corr = sum_xy / sqrt(sum_x2 * sum_y2);
+				}
+				else {
+					cur_corr = -1.0;
+					std::cout << "ERROR: one of the sum terms is zero." << std::endl;
+					std::cout << "Current shift: " << ref_start << std::endl;
+					std::cout << "calc_len: " << calc_len << std::endl;
+					std::cout << "yy[ref_start]: " << yy_buffer[ref_start] << std::endl;
+					std::cout << "sum_x2: " << sum_x2 << std::endl;
+					std::cout << "sum_y2: " << sum_y2 << std::endl;
+				}
 			}
 			else {
-				cur_corr = -1.0;
-				std::cout << "ERROR: one of the sum terms is zero." << std::endl;
-				std::cout << "Current shift: " << ref_start << std::endl;
-				std::cout << "calc_len: " << calc_len << std::endl;
-				std::cout << "yy[ref_start]: " << yy_buffer[ref_start] << std::endl;
-				std::cout << "sum_x2: " << sum_x2 << std::endl;
-				std::cout << "sum_y2: " << sum_y2 << std::endl;
+				cur_corr = sum_xy;
 			}
 
 			if (cur_corr > corr) {
@@ -276,9 +294,6 @@ xcorrelate_impl::xcorr(int num_items, float& corr, int& lag, float *corr_buffer)
 			}
 		}
 	}
-
-	// std::cout << "Best Correlation: " << corr << std::endl;
-	// std::cout << "Best Lag: " << lag << std::endl << std::endl;
 }
 
 int

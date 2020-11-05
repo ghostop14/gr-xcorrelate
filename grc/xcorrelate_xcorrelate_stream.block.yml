@@ -29,6 +29,12 @@ parameters:
   label: Number of Signals
   dtype: int
   default: '2'
+- id: normalize
+  label: Normalize
+  dtype: enum
+  options: ['True', 'False']
+  option_labels: ['Yes', 'No']
+  hide: part
 
 asserts:
 - ${ signal_length > 1023 }
@@ -54,7 +60,7 @@ outputs:
 
 templates:
   imports: import xcorrelate
-  make: xcorrelate.xcorrelate(${num_inputs},${signal_length},${type.data_type},${type.size},${max_search_offset},${decim_frames},${num_inputs}-1,False)
+  make: xcorrelate.xcorrelate(${num_inputs},${signal_length},${type.data_type},${type.size},${max_search_offset},${decim_frames},${num_inputs}-1,False,${normalize})
 
 documentation: "For signal inputs 0..N, this block will cross-correlate each signal\
     \ in the range 1..n against signal 0 (reference signal).\
@@ -68,17 +74,7 @@ documentation: "For signal inputs 0..N, this block will cross-correlate each sig
     \ indicating that that signal would need to be moved forward in time.\
     \ \n\nNote that for improved performance you can specify a maximum index search value\
     \ that will restrict how far the block adjust offsets to find the best correlation.\
-    \ If this value is 0, a value of 70% of the analysis window length will be used.\
-    \ A value of 200 has been successfully run realtime on an i7 6th gen CPU.  Higher\
-    \ values could introduce delays/choppiness in real-time processing that can be heard\
-    \ with audio, but may be okay for digital processing.  One method of tuning would be\
-    \ to run a CPU performance monitor such as htop and watch the load on the core processing\
-    \ the correlation block.  Adjust down the max search offset till usage comes down off 100%\
-    \ for that core.\n\n\
-    \ Some setting combinations successfully tested with audio-out decoding:\n\
-    \ - RTL-SDR: Sample rate: 2.4e6, frame size: 8192, max_search: up to 1000, 1-in-N frames: 4 to 6\n\
-    \ - UHD with UI controls: sample rate: 25e6, frame size: 8192, max_search up to 500, 1-in-N frames: 100\n\
-    \ - UHD without UI controls: sample rate: 40e6, frame size: 8192, max_search 400, 1-in-N frames: 200 "
+    \ If this value is 0, a value of 70% of the analysis window length will be used."
     
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

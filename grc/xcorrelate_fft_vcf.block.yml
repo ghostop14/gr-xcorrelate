@@ -1,0 +1,39 @@
+id: xcorrelate_xcorrelate_fft_vcf
+label: xcorrelate freq
+category: '[Cross Correlation]'
+
+parameters:
+-   id: vec_len
+    label: Vector Size
+    dtype: int
+    default: '1024'
+    hide: none
+
+inputs:
+-   domain: stream
+    label: ref_sig
+    dtype: complex
+    vlen: ${vec_len}
+-   domain: stream
+    label: sig1
+    dtype: complex
+    vlen: ${vec_len}
+
+outputs:
+-   domain: stream
+    label: corr
+    dtype: float
+    optional: true
+    vlen: ${vec_len}
+-   domain: message
+    label: corrmsg
+    optional: true
+
+templates:
+    imports: import xcorrelate
+    make: xcorrelate.xcorrelate_fft_vcf2(${vec_len})
+    
+documentation: |-
+    This block takes two incoming FFT vectors and produces their cross-correlation in the frequency domain.  Note that this correlation is not normalized.
+
+file_format: 1

@@ -45,10 +45,12 @@ namespace gr {
        * \param data_size Provide the sizeof(data type)
        * \param max_search_index Limit the number of offsets performed to find the best correlation.
        * \param decim_frames Only process every decim_frames frame.
+       * \param num_outputs Used to determine stream/vector mode or not
        * \param async Flag indicating if a second thread should be used for processing.
+       * \param normalize Perform normalization on the calculated correlation
        */
       static sptr make(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames, int num_outputs, bool async=false);
+    		  int decim_frames, int num_outputs, bool async=false, bool normalize=true);
     };
 
   } // namespace xcorrelate

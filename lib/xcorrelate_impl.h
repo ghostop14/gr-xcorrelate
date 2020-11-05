@@ -43,6 +43,7 @@ namespace gr {
       int max_shift;
       int d_num_outputs;
       bool d_async;
+      bool d_normalize;
 
       // Internal buffers
       float *ref_mag_buffer;
@@ -74,12 +75,11 @@ namespace gr {
 
      public:
       xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames, int num_outputs, bool async=false);
+    		  int decim_frames, int num_outputs, bool async=false, bool normalize=true);
       ~xcorrelate_impl();
 
       bool stop();
 
-      // Where all the action really happens
       int work_test(
               int noutput_items,
               gr_vector_const_void_star &input_items,

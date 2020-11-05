@@ -10,7 +10,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: xcorr_fm_radio4
+    id: xcorr_fm_radio_fft_td_comparison
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -21,7 +21,7 @@ options:
     run_options: prompt
     sizing_mode: fixed
     thread_safe_setters: ''
-    title: Cross Correlate - 4 Inputs
+    title: Cross Correlate
     window_size: ''
   states:
     bus_sink: false
@@ -63,12 +63,12 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '100'
+    value: '10'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [816, 20.0]
+    coordinate: [936, 76.0]
     rotation: 0
     state: enabled
 - name: corr_frame_size
@@ -80,7 +80,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [824, 84.0]
+    coordinate: [936, 140.0]
     rotation: 0
     state: enabled
 - name: delay_0
@@ -97,7 +97,7 @@ blocks:
     coordinate: [1112, 20.0]
     rotation: 0
     state: true
-- name: delay_1
+- name: delay_fft
   id: variable
   parameters:
     comment: ''
@@ -106,19 +106,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1112, 124.0]
-    rotation: 0
-    state: true
-- name: delay_2
-  id: variable
-  parameters:
-    comment: ''
-    value: '0'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1104, 196.0]
+    coordinate: [1112, 140.0]
     rotation: 0
     state: true
 - name: delay_label
@@ -127,7 +115,7 @@ blocks:
     comment: ''
     formatter: None
     gui_hint: 3,0,1,1
-    label: Correcting Delay [0,1]
+    label: TD Correcting Delay
     type: int
     value: delay_0
   states:
@@ -137,36 +125,20 @@ blocks:
     coordinate: [1216, 4.0]
     rotation: 0
     state: true
-- name: delay_label1
+- name: delay_label_0
   id: variable_qtgui_label
   parameters:
     comment: ''
     formatter: None
     gui_hint: 3,1,1,1
-    label: Correcting Delay [0,2]
+    label: FFT Correcting Delay
     type: int
-    value: delay_1
+    value: delay_fft
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1216, 124.0]
-    rotation: 0
-    state: true
-- name: delay_label2
-  id: variable_qtgui_label
-  parameters:
-    comment: ''
-    formatter: None
-    gui_hint: 3,2,1,1
-    label: Correcting Delay [0,3]
-    type: int
-    value: delay_2
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1216, 212.0]
+    coordinate: [1208, 124.0]
     rotation: 0
     state: true
 - name: filter_cutoff
@@ -226,12 +198,33 @@ blocks:
     coordinate: [544, 12.0]
     rotation: 0
     state: enabled
+- name: lag
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: 0,2,1,1
+    label: Induced Lag
+    min_len: '200'
+    orient: Qt.Horizontal
+    rangeType: int
+    start: '-20'
+    step: '1'
+    stop: '20'
+    value: '10'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [672, 12.0]
+    rotation: 0
+    state: enabled
 - name: lock_output
   id: variable_qtgui_check_box
   parameters:
     comment: ''
     'false': 'False'
-    gui_hint: 3,3,1,1
+    gui_hint: 3,2,1,1
     label: Lock Correlator Lag
     'true': 'True'
     type: bool
@@ -240,31 +233,19 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1416, 20.0]
+    coordinate: [1200, 260.0]
     rotation: 0
     state: true
 - name: max_search
   id: variable
   parameters:
     comment: ''
-    value: '4096'
+    value: '2048'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 20.0]
-    rotation: 0
-    state: enabled
-- name: min_corr_score
-  id: variable
-  parameters:
-    comment: ''
-    value: '0.9'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [768, 148.0]
+    coordinate: [928, 12.0]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -295,7 +276,7 @@ blocks:
   id: variable_qtgui_range
   parameters:
     comment: ''
-    gui_hint: 0,2,1,1
+    gui_hint: 0,3,1,1
     label: Volume
     min_len: '200'
     orient: Qt.Horizontal
@@ -309,7 +290,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [968, 4.0]
+    coordinate: [808, 12.0]
     rotation: 0
     state: enabled
 - name: working_samp_rate
@@ -338,7 +319,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [936, 1028.0]
+    coordinate: [744, 940.0]
     rotation: 0
     state: enabled
 - name: audio_sink_0
@@ -355,7 +336,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1168, 1132.0]
+    coordinate: [1000, 1108.0]
     rotation: 0
     state: enabled
 - name: blocks_add_xx_0
@@ -366,14 +347,14 @@ blocks:
     comment: ''
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_inputs: '4'
+    num_inputs: '2'
     type: complex
     vlen: '1'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [848, 448.0]
+    coordinate: [824, 448.0]
     rotation: 0
     state: true
 - name: blocks_complex_to_mag_0
@@ -389,7 +370,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [552, 520.0]
+    coordinate: [560, 552.0]
     rotation: 0
     state: true
 - name: blocks_complex_to_mag_0_0
@@ -405,55 +386,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [552, 600.0]
-    rotation: 0
-    state: true
-- name: blocks_complex_to_mag_0_0_0
-  id: blocks_complex_to_mag
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [512, 792.0]
-    rotation: 0
-    state: true
-- name: blocks_complex_to_mag_0_0_0_0
-  id: blocks_complex_to_mag
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [672, 976.0]
-    rotation: 0
-    state: true
-- name: blocks_complex_to_mag_0_0_0_1
-  id: blocks_complex_to_mag
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [680, 864.0]
+    coordinate: [520, 608.0]
     rotation: 0
     state: true
 - name: blocks_delay_0_0_0
@@ -475,44 +408,6 @@ blocks:
     coordinate: [712, 476.0]
     rotation: 0
     state: true
-- name: blocks_delay_0_0_0_0
-  id: blocks_delay
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    delay: delay_1
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_ports: '1'
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [544, 724.0]
-    rotation: 0
-    state: true
-- name: blocks_delay_0_0_0_0_0
-  id: blocks_delay
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    delay: delay_2
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    num_ports: '1'
-    type: complex
-    vlen: '1'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [600, 908.0]
-    rotation: 0
-    state: true
 - name: blocks_keep_one_in_n_0
   id: blocks_keep_one_in_n
   parameters:
@@ -528,7 +423,43 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [912, 928.0]
+    coordinate: [568, 952.0]
+    rotation: 0
+    state: true
+- name: blocks_keep_one_in_n_1
+  id: blocks_keep_one_in_n
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: corr_frame_decim
+    type: float
+    vlen: corr_frame_size*2
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [792, 340.0]
+    rotation: 0
+    state: true
+- name: blocks_keep_one_in_n_1_0
+  id: blocks_keep_one_in_n
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: corr_frame_decim
+    type: float
+    vlen: corr_frame_size
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1024, 692.0]
     rotation: 0
     state: true
 - name: blocks_max_xx_0
@@ -547,7 +478,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1440, 620.0]
+    coordinate: [1408, 636.0]
     rotation: 0
     state: true
 - name: blocks_max_xx_0_0
@@ -566,7 +497,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1440, 780.0]
+    coordinate: [1408, 796.0]
     rotation: 0
     state: true
 - name: blocks_multiply_const_vxx_0
@@ -584,7 +515,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1176, 1036.0]
+    coordinate: [984, 1044.0]
     rotation: 0
     state: enabled
 - name: blocks_multiply_const_vxx_0_0
@@ -602,7 +533,43 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1824, 740.0]
+    coordinate: [1792, 756.0]
+    rotation: 0
+    state: true
+- name: blocks_stream_to_vector_0
+  id: blocks_stream_to_vector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: corr_frame_size
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [520, 680.0]
+    rotation: 0
+    state: true
+- name: blocks_stream_to_vector_1
+  id: blocks_stream_to_vector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: corr_frame_size
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [496, 792.0]
     rotation: 0
     state: true
 - name: blocks_sub_xx_0
@@ -620,64 +587,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1712, 712.0]
-    rotation: 0
-    state: true
-- name: correctiq_correctiq_auto_0
-  id: correctiq_correctiq_auto
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    freq: center_freq
-    gain: gain
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samp_rate: samp_rate
-    syncWindow: '2'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [280, 1044.0]
-    rotation: 0
-    state: true
-- name: correctiq_correctiq_auto_0_0
-  id: correctiq_correctiq_auto
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    freq: center_freq
-    gain: gain
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samp_rate: samp_rate
-    syncWindow: '2'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [272, 764.0]
-    rotation: 0
-    state: true
-- name: correctiq_correctiq_auto_0_0_0
-  id: correctiq_correctiq_auto
-  parameters:
-    affinity: ''
-    alias: ''
-    comment: ''
-    freq: center_freq
-    gain: gain
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    samp_rate: samp_rate
-    syncWindow: '2'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [312, 476.0]
+    coordinate: [1680, 728.0]
     rotation: 0
     state: true
 - name: correctiq_correctiq_auto_0_0_0_0
@@ -696,7 +606,68 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [320, 276.0]
+    coordinate: [336, 260.0]
+    rotation: 0
+    state: true
+- name: correctiq_correctiq_auto_0_0_0_0_0
+  id: correctiq_correctiq_auto
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    freq: center_freq
+    gain: gain
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samp_rate: samp_rate
+    syncWindow: '2'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [312, 524.0]
+    rotation: 0
+    state: true
+- name: fft_vxx_0
+  id: fft_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: corr_frame_size
+    forward: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '1'
+    shift: 'True'
+    type: complex
+    window: '[]'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [680, 684.0]
+    rotation: 0
+    state: true
+- name: fft_vxx_0_0
+  id: fft_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: corr_frame_size
+    forward: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '1'
+    shift: 'True'
+    type: complex
+    window: '[]'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [664, 796.0]
     rotation: 0
     state: true
 - name: lfast_low_pass_filter_0_0
@@ -720,7 +691,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [544, 244.0]
+    coordinate: [408, 364.0]
     rotation: 0
     state: enabled
 - name: lfast_low_pass_filter_0_0_0
@@ -744,55 +715,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [336, 580.0]
-    rotation: 0
-    state: enabled
-- name: lfast_low_pass_filter_0_0_0_0
-  id: lfast_low_pass_filter
-  parameters:
-    affinity: ''
-    alias: ''
-    beta: '6.76'
-    comment: ''
-    cutoff_freq: filter_cutoff
-    decim: '1'
-    gain: '1'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    nthreads: '1'
-    samp_rate: samp_rate
-    type: ccc
-    width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [328, 868.0]
-    rotation: 0
-    state: enabled
-- name: lfast_low_pass_filter_0_0_0_0_0
-  id: lfast_low_pass_filter
-  parameters:
-    affinity: ''
-    alias: ''
-    beta: '6.76'
-    comment: ''
-    cutoff_freq: filter_cutoff
-    decim: '1'
-    gain: '1'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    nthreads: '1'
-    samp_rate: samp_rate
-    type: ccc
-    width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [304, 1148.0]
+    coordinate: [312, 644.0]
     rotation: 0
     state: enabled
 - name: logpwrfft_x_0
@@ -814,7 +737,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1264, 588.0]
+    coordinate: [1232, 604.0]
     rotation: 0
     state: true
 - name: logpwrfft_x_0_0
@@ -836,167 +759,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1248, 748.0]
-    rotation: 0
-    state: true
-- name: qtgui_freq_sink_x_0
-  id: qtgui_freq_sink_x
-  parameters:
-    affinity: ''
-    alias: ''
-    alpha1: '1.0'
-    alpha10: '1.0'
-    alpha2: '1.0'
-    alpha3: '1.0'
-    alpha4: '1.0'
-    alpha5: '1.0'
-    alpha6: '1.0'
-    alpha7: '1.0'
-    alpha8: '1.0'
-    alpha9: '1.0'
-    autoscale: 'False'
-    average: '1.0'
-    axislabels: 'True'
-    bw: samp_rate
-    color1: '"blue"'
-    color10: '"dark blue"'
-    color2: '"red"'
-    color3: '"green"'
-    color4: '"black"'
-    color5: '"cyan"'
-    color6: '"magenta"'
-    color7: '"yellow"'
-    color8: '"dark red"'
-    color9: '"dark green"'
-    comment: ''
-    ctrlpanel: 'False'
-    fc: center_freq
-    fftsize: '1024'
-    freqhalf: 'True'
-    grid: 'False'
-    gui_hint: 1,0,2,2
-    label: Relative Gain
-    label1: Reference
-    label10: ''''''
-    label2: Signal1
-    label3: Signal2
-    label4: Signal3
-    label5: Correlated
-    label6: ''''''
-    label7: ''''''
-    label8: ''''''
-    label9: ''''''
-    legend: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    name: '"Uncorrelated"'
-    nconnections: '5'
-    showports: 'False'
-    tr_chan: '0'
-    tr_level: '0.0'
-    tr_mode: qtgui.TRIG_MODE_FREE
-    tr_tag: '""'
-    type: complex
-    units: dB
-    update_time: '0.10'
-    width1: '1'
-    width10: '1'
-    width2: '1'
-    width3: '1'
-    width4: '1'
-    width5: '1'
-    width6: '1'
-    width7: '1'
-    width8: '1'
-    width9: '1'
-    wintype: firdes.WIN_BLACKMAN_hARRIS
-    ymax: '-10'
-    ymin: '-80'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [936, 248.0]
-    rotation: 0
-    state: true
-- name: qtgui_freq_sink_x_0_0
-  id: qtgui_freq_sink_x
-  parameters:
-    affinity: ''
-    alias: ''
-    alpha1: '1.0'
-    alpha10: '1.0'
-    alpha2: '1.0'
-    alpha3: '1.0'
-    alpha4: '1.0'
-    alpha5: '1.0'
-    alpha6: '1.0'
-    alpha7: '1.0'
-    alpha8: '1.0'
-    alpha9: '1.0'
-    autoscale: 'False'
-    average: '1.0'
-    axislabels: 'True'
-    bw: samp_rate
-    color1: '"blue"'
-    color10: '"dark blue"'
-    color2: '"red"'
-    color3: '"green"'
-    color4: '"black"'
-    color5: '"cyan"'
-    color6: '"magenta"'
-    color7: '"yellow"'
-    color8: '"dark red"'
-    color9: '"dark green"'
-    comment: ''
-    ctrlpanel: 'False'
-    fc: center_freq
-    fftsize: '1024'
-    freqhalf: 'True'
-    grid: 'False'
-    gui_hint: 1,2,2,2
-    label: Relative Gain
-    label1: Reference
-    label10: ''''''
-    label2: Delayed
-    label3: ''''''
-    label4: ''''''
-    label5: ''''''
-    label6: ''''''
-    label7: ''''''
-    label8: ''''''
-    label9: ''''''
-    legend: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    name: '"Correlated"'
-    nconnections: '1'
-    showports: 'False'
-    tr_chan: '0'
-    tr_level: '0.0'
-    tr_mode: qtgui.TRIG_MODE_FREE
-    tr_tag: '""'
-    type: complex
-    units: dB
-    update_time: '0.10'
-    width1: '1'
-    width10: '1'
-    width2: '1'
-    width3: '1'
-    width4: '1'
-    width5: '1'
-    width6: '1'
-    width7: '1'
-    width8: '1'
-    width9: '1'
-    wintype: firdes.WIN_BLACKMAN_hARRIS
-    ymax: '-10'
-    ymin: '-80'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [1016, 488.0]
+    coordinate: [1216, 764.0]
     rotation: 0
     state: true
 - name: qtgui_number_sink_0
@@ -1028,7 +791,7 @@ blocks:
     factor8: '1'
     factor9: '1'
     graph_type: qtgui.NUM_GRAPH_HORIZ
-    gui_hint: 6,0,1,3
+    gui_hint: 5,0,1,3
     label1: Ref Signal
     label10: ''
     label2: Correlated
@@ -1040,7 +803,7 @@ blocks:
     label8: ''
     label9: ''
     max: '-10'
-    min: '-60'
+    min: '-40'
     name: Max Power
     nconnections: '2'
     type: float
@@ -1059,7 +822,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1760, 588.0]
+    coordinate: [1696, 620.0]
     rotation: 0
     state: true
 - name: qtgui_number_sink_0_0_0
@@ -1091,8 +854,8 @@ blocks:
     factor8: '1'
     factor9: '1'
     graph_type: qtgui.NUM_GRAPH_HORIZ
-    gui_hint: 7,0,1,3
-    label1: '""'
+    gui_hint: 6,0,1,3
+    label1: ''
     label10: ''
     label2: ''
     label3: ''
@@ -1104,7 +867,7 @@ blocks:
     label9: ''
     max: '10'
     min: '-10'
-    name: '"Improvement Over Reference"'
+    name: '"Improvement"'
     nconnections: '1'
     type: float
     unit1: ''
@@ -1122,11 +885,11 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1744, 796.0]
+    coordinate: [1712, 812.0]
     rotation: 0
     state: true
-- name: qtgui_time_sink_x_0
-  id: qtgui_time_sink_x
+- name: qtgui_vector_sink_f_0
+  id: qtgui_vector_sink_f
   parameters:
     affinity: ''
     alias: ''
@@ -1140,67 +903,39 @@ blocks:
     alpha7: '1.0'
     alpha8: '1.0'
     alpha9: '1.0'
-    autoscale: 'True'
-    axislabels: 'True'
-    color1: blue
-    color10: dark blue
-    color2: red
-    color3: green
-    color4: black
-    color5: cyan
-    color6: magenta
-    color7: yellow
-    color8: dark red
-    color9: dark green
+    autoscale: 'False'
+    average: '1.0'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
     comment: ''
-    ctrlpanel: 'False'
-    entags: 'True'
     grid: 'False'
-    gui_hint: 5,0,1,4
-    label1: Reference
-    label10: Signal 10
-    label2: Signal 1
-    label3: Signal 2
-    label4: Signal 3
-    label5: Correlated
-    label6: Signal 6
-    label7: Signal 7
-    label8: Signal 8
-    label9: Signal 9
-    legend: 'True'
-    marker1: '-1'
-    marker10: '-1'
-    marker2: '-1'
-    marker3: '-1'
-    marker4: '-1'
-    marker5: '-1'
-    marker6: '-1'
-    marker7: '-1'
-    marker8: '-1'
-    marker9: '-1'
-    name: '""'
-    nconnections: '5'
-    size: '64'
-    srate: samp_rate
-    stemplot: 'False'
-    style1: '1'
-    style10: '1'
-    style2: '1'
-    style3: '1'
-    style4: '1'
-    style5: '1'
-    style6: '1'
-    style7: '1'
-    style8: '1'
-    style9: '1'
-    tr_chan: '0'
-    tr_delay: '0'
-    tr_level: '0.0'
-    tr_mode: qtgui.TRIG_MODE_FREE
-    tr_slope: qtgui.TRIG_SLOPE_POS
-    tr_tag: '""'
-    type: float
+    gui_hint: 1,0,1,2
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Time Domain Correlation"'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'True'
     update_time: '0.10'
+    vlen: corr_frame_size*2
     width1: '1'
     width10: '1'
     width2: '1'
@@ -1211,15 +946,92 @@ blocks:
     width7: '1'
     width8: '1'
     width9: '1'
-    ylabel: Amplitude
-    ymax: '1'
-    ymin: '-1'
-    yunit: '""'
+    x_axis_label: '"Sample Lag"'
+    x_start: -corr_frame_size
+    x_step: '1.0'
+    x_units: '"Samples"'
+    y_axis_label: '"Normalized Correlation"'
+    y_units: '""'
+    ymax: '1.0'
+    ymin: '0.8'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [856, 752.0]
+    coordinate: [992, 244.0]
+    rotation: 0
+    state: true
+- name: qtgui_vector_sink_f_0_0
+  id: qtgui_vector_sink_f
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'False'
+    gui_hint: 1,2,1,2
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"Frequency Domain Correlation"'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'True'
+    update_time: '0.10'
+    vlen: corr_frame_size
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    x_axis_label: '"Sample Lag"'
+    x_start: -corr_frame_size/2
+    x_step: '1.0'
+    x_units: '"Samples"'
+    y_axis_label: '"Raw Correlation"'
+    y_units: '""'
+    ymax: '25000.0'
+    ymin: '0.0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1008, 428.0]
     rotation: 0
     state: true
 - name: qtgui_waterfall_sink_x_0
@@ -1280,7 +1092,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1208, 400.0]
+    coordinate: [1224, 408.0]
     rotation: 0
     state: true
 - name: rational_resampler_xxx_0_0
@@ -1300,7 +1112,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1168, 924.0]
+    coordinate: [968, 924.0]
     rotation: 0
     state: enabled
 - name: rtlsdr_source_0
@@ -2017,720 +1829,6 @@ blocks:
     coordinate: [64, 516.0]
     rotation: 0
     state: enabled
-- name: rtlsdr_source_0_0_0
-  id: rtlsdr_source
-  parameters:
-    affinity: ''
-    alias: ''
-    ant0: ''
-    ant1: ''
-    ant10: ''
-    ant11: ''
-    ant12: ''
-    ant13: ''
-    ant14: ''
-    ant15: ''
-    ant16: ''
-    ant17: ''
-    ant18: ''
-    ant19: ''
-    ant2: ''
-    ant20: ''
-    ant21: ''
-    ant22: ''
-    ant23: ''
-    ant24: ''
-    ant25: ''
-    ant26: ''
-    ant27: ''
-    ant28: ''
-    ant29: ''
-    ant3: ''
-    ant30: ''
-    ant31: ''
-    ant4: ''
-    ant5: ''
-    ant6: ''
-    ant7: ''
-    ant8: ''
-    ant9: ''
-    args: '"rtl=2"'
-    bb_gain0: gain
-    bb_gain1: '20'
-    bb_gain10: '20'
-    bb_gain11: '20'
-    bb_gain12: '20'
-    bb_gain13: '20'
-    bb_gain14: '20'
-    bb_gain15: '20'
-    bb_gain16: '20'
-    bb_gain17: '20'
-    bb_gain18: '20'
-    bb_gain19: '20'
-    bb_gain2: '20'
-    bb_gain20: '20'
-    bb_gain21: '20'
-    bb_gain22: '20'
-    bb_gain23: '20'
-    bb_gain24: '20'
-    bb_gain25: '20'
-    bb_gain26: '20'
-    bb_gain27: '20'
-    bb_gain28: '20'
-    bb_gain29: '20'
-    bb_gain3: '20'
-    bb_gain30: '20'
-    bb_gain31: '20'
-    bb_gain4: '20'
-    bb_gain5: '20'
-    bb_gain6: '20'
-    bb_gain7: '20'
-    bb_gain8: '20'
-    bb_gain9: '20'
-    bw0: '0'
-    bw1: '0'
-    bw10: '0'
-    bw11: '0'
-    bw12: '0'
-    bw13: '0'
-    bw14: '0'
-    bw15: '0'
-    bw16: '0'
-    bw17: '0'
-    bw18: '0'
-    bw19: '0'
-    bw2: '0'
-    bw20: '0'
-    bw21: '0'
-    bw22: '0'
-    bw23: '0'
-    bw24: '0'
-    bw25: '0'
-    bw26: '0'
-    bw27: '0'
-    bw28: '0'
-    bw29: '0'
-    bw3: '0'
-    bw30: '0'
-    bw31: '0'
-    bw4: '0'
-    bw5: '0'
-    bw6: '0'
-    bw7: '0'
-    bw8: '0'
-    bw9: '0'
-    clock_source0: ''
-    clock_source1: ''
-    clock_source2: ''
-    clock_source3: ''
-    clock_source4: ''
-    clock_source5: ''
-    clock_source6: ''
-    clock_source7: ''
-    comment: ''
-    corr0: '0'
-    corr1: '0'
-    corr10: '0'
-    corr11: '0'
-    corr12: '0'
-    corr13: '0'
-    corr14: '0'
-    corr15: '0'
-    corr16: '0'
-    corr17: '0'
-    corr18: '0'
-    corr19: '0'
-    corr2: '0'
-    corr20: '0'
-    corr21: '0'
-    corr22: '0'
-    corr23: '0'
-    corr24: '0'
-    corr25: '0'
-    corr26: '0'
-    corr27: '0'
-    corr28: '0'
-    corr29: '0'
-    corr3: '0'
-    corr30: '0'
-    corr31: '0'
-    corr4: '0'
-    corr5: '0'
-    corr6: '0'
-    corr7: '0'
-    corr8: '0'
-    corr9: '0'
-    dc_offset_mode0: '0'
-    dc_offset_mode1: '0'
-    dc_offset_mode10: '0'
-    dc_offset_mode11: '0'
-    dc_offset_mode12: '0'
-    dc_offset_mode13: '0'
-    dc_offset_mode14: '0'
-    dc_offset_mode15: '0'
-    dc_offset_mode16: '0'
-    dc_offset_mode17: '0'
-    dc_offset_mode18: '0'
-    dc_offset_mode19: '0'
-    dc_offset_mode2: '0'
-    dc_offset_mode20: '0'
-    dc_offset_mode21: '0'
-    dc_offset_mode22: '0'
-    dc_offset_mode23: '0'
-    dc_offset_mode24: '0'
-    dc_offset_mode25: '0'
-    dc_offset_mode26: '0'
-    dc_offset_mode27: '0'
-    dc_offset_mode28: '0'
-    dc_offset_mode29: '0'
-    dc_offset_mode3: '0'
-    dc_offset_mode30: '0'
-    dc_offset_mode31: '0'
-    dc_offset_mode4: '0'
-    dc_offset_mode5: '0'
-    dc_offset_mode6: '0'
-    dc_offset_mode7: '0'
-    dc_offset_mode8: '0'
-    dc_offset_mode9: '0'
-    freq0: center_freq
-    freq1: 100e6
-    freq10: 100e6
-    freq11: 100e6
-    freq12: 100e6
-    freq13: 100e6
-    freq14: 100e6
-    freq15: 100e6
-    freq16: 100e6
-    freq17: 100e6
-    freq18: 100e6
-    freq19: 100e6
-    freq2: 100e6
-    freq20: 100e6
-    freq21: 100e6
-    freq22: 100e6
-    freq23: 100e6
-    freq24: 100e6
-    freq25: 100e6
-    freq26: 100e6
-    freq27: 100e6
-    freq28: 100e6
-    freq29: 100e6
-    freq3: 100e6
-    freq30: 100e6
-    freq31: 100e6
-    freq4: 100e6
-    freq5: 100e6
-    freq6: 100e6
-    freq7: 100e6
-    freq8: 100e6
-    freq9: 100e6
-    gain0: gain
-    gain1: '10'
-    gain10: '10'
-    gain11: '10'
-    gain12: '10'
-    gain13: '10'
-    gain14: '10'
-    gain15: '10'
-    gain16: '10'
-    gain17: '10'
-    gain18: '10'
-    gain19: '10'
-    gain2: '10'
-    gain20: '10'
-    gain21: '10'
-    gain22: '10'
-    gain23: '10'
-    gain24: '10'
-    gain25: '10'
-    gain26: '10'
-    gain27: '10'
-    gain28: '10'
-    gain29: '10'
-    gain3: '10'
-    gain30: '10'
-    gain31: '10'
-    gain4: '10'
-    gain5: '10'
-    gain6: '10'
-    gain7: '10'
-    gain8: '10'
-    gain9: '10'
-    gain_mode0: 'False'
-    gain_mode1: 'False'
-    gain_mode10: 'False'
-    gain_mode11: 'False'
-    gain_mode12: 'False'
-    gain_mode13: 'False'
-    gain_mode14: 'False'
-    gain_mode15: 'False'
-    gain_mode16: 'False'
-    gain_mode17: 'False'
-    gain_mode18: 'False'
-    gain_mode19: 'False'
-    gain_mode2: 'False'
-    gain_mode20: 'False'
-    gain_mode21: 'False'
-    gain_mode22: 'False'
-    gain_mode23: 'False'
-    gain_mode24: 'False'
-    gain_mode25: 'False'
-    gain_mode26: 'False'
-    gain_mode27: 'False'
-    gain_mode28: 'False'
-    gain_mode29: 'False'
-    gain_mode3: 'False'
-    gain_mode30: 'False'
-    gain_mode31: 'False'
-    gain_mode4: 'False'
-    gain_mode5: 'False'
-    gain_mode6: 'False'
-    gain_mode7: 'False'
-    gain_mode8: 'False'
-    gain_mode9: 'False'
-    if_gain0: gain
-    if_gain1: '20'
-    if_gain10: '20'
-    if_gain11: '20'
-    if_gain12: '20'
-    if_gain13: '20'
-    if_gain14: '20'
-    if_gain15: '20'
-    if_gain16: '20'
-    if_gain17: '20'
-    if_gain18: '20'
-    if_gain19: '20'
-    if_gain2: '20'
-    if_gain20: '20'
-    if_gain21: '20'
-    if_gain22: '20'
-    if_gain23: '20'
-    if_gain24: '20'
-    if_gain25: '20'
-    if_gain26: '20'
-    if_gain27: '20'
-    if_gain28: '20'
-    if_gain29: '20'
-    if_gain3: '20'
-    if_gain30: '20'
-    if_gain31: '20'
-    if_gain4: '20'
-    if_gain5: '20'
-    if_gain6: '20'
-    if_gain7: '20'
-    if_gain8: '20'
-    if_gain9: '20'
-    iq_balance_mode0: '0'
-    iq_balance_mode1: '0'
-    iq_balance_mode10: '0'
-    iq_balance_mode11: '0'
-    iq_balance_mode12: '0'
-    iq_balance_mode13: '0'
-    iq_balance_mode14: '0'
-    iq_balance_mode15: '0'
-    iq_balance_mode16: '0'
-    iq_balance_mode17: '0'
-    iq_balance_mode18: '0'
-    iq_balance_mode19: '0'
-    iq_balance_mode2: '0'
-    iq_balance_mode20: '0'
-    iq_balance_mode21: '0'
-    iq_balance_mode22: '0'
-    iq_balance_mode23: '0'
-    iq_balance_mode24: '0'
-    iq_balance_mode25: '0'
-    iq_balance_mode26: '0'
-    iq_balance_mode27: '0'
-    iq_balance_mode28: '0'
-    iq_balance_mode29: '0'
-    iq_balance_mode3: '0'
-    iq_balance_mode30: '0'
-    iq_balance_mode31: '0'
-    iq_balance_mode4: '0'
-    iq_balance_mode5: '0'
-    iq_balance_mode6: '0'
-    iq_balance_mode7: '0'
-    iq_balance_mode8: '0'
-    iq_balance_mode9: '0'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    nchan: '1'
-    num_mboards: '1'
-    sample_rate: samp_rate
-    sync: sync
-    time_source0: ''
-    time_source1: ''
-    time_source2: ''
-    time_source3: ''
-    time_source4: ''
-    time_source5: ''
-    time_source6: ''
-    time_source7: ''
-    type: fc32
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [24, 756.0]
-    rotation: 0
-    state: enabled
-- name: rtlsdr_source_0_0_0_0
-  id: rtlsdr_source
-  parameters:
-    affinity: ''
-    alias: ''
-    ant0: ''
-    ant1: ''
-    ant10: ''
-    ant11: ''
-    ant12: ''
-    ant13: ''
-    ant14: ''
-    ant15: ''
-    ant16: ''
-    ant17: ''
-    ant18: ''
-    ant19: ''
-    ant2: ''
-    ant20: ''
-    ant21: ''
-    ant22: ''
-    ant23: ''
-    ant24: ''
-    ant25: ''
-    ant26: ''
-    ant27: ''
-    ant28: ''
-    ant29: ''
-    ant3: ''
-    ant30: ''
-    ant31: ''
-    ant4: ''
-    ant5: ''
-    ant6: ''
-    ant7: ''
-    ant8: ''
-    ant9: ''
-    args: '"rtl=3"'
-    bb_gain0: gain
-    bb_gain1: '20'
-    bb_gain10: '20'
-    bb_gain11: '20'
-    bb_gain12: '20'
-    bb_gain13: '20'
-    bb_gain14: '20'
-    bb_gain15: '20'
-    bb_gain16: '20'
-    bb_gain17: '20'
-    bb_gain18: '20'
-    bb_gain19: '20'
-    bb_gain2: '20'
-    bb_gain20: '20'
-    bb_gain21: '20'
-    bb_gain22: '20'
-    bb_gain23: '20'
-    bb_gain24: '20'
-    bb_gain25: '20'
-    bb_gain26: '20'
-    bb_gain27: '20'
-    bb_gain28: '20'
-    bb_gain29: '20'
-    bb_gain3: '20'
-    bb_gain30: '20'
-    bb_gain31: '20'
-    bb_gain4: '20'
-    bb_gain5: '20'
-    bb_gain6: '20'
-    bb_gain7: '20'
-    bb_gain8: '20'
-    bb_gain9: '20'
-    bw0: '0'
-    bw1: '0'
-    bw10: '0'
-    bw11: '0'
-    bw12: '0'
-    bw13: '0'
-    bw14: '0'
-    bw15: '0'
-    bw16: '0'
-    bw17: '0'
-    bw18: '0'
-    bw19: '0'
-    bw2: '0'
-    bw20: '0'
-    bw21: '0'
-    bw22: '0'
-    bw23: '0'
-    bw24: '0'
-    bw25: '0'
-    bw26: '0'
-    bw27: '0'
-    bw28: '0'
-    bw29: '0'
-    bw3: '0'
-    bw30: '0'
-    bw31: '0'
-    bw4: '0'
-    bw5: '0'
-    bw6: '0'
-    bw7: '0'
-    bw8: '0'
-    bw9: '0'
-    clock_source0: ''
-    clock_source1: ''
-    clock_source2: ''
-    clock_source3: ''
-    clock_source4: ''
-    clock_source5: ''
-    clock_source6: ''
-    clock_source7: ''
-    comment: ''
-    corr0: '0'
-    corr1: '0'
-    corr10: '0'
-    corr11: '0'
-    corr12: '0'
-    corr13: '0'
-    corr14: '0'
-    corr15: '0'
-    corr16: '0'
-    corr17: '0'
-    corr18: '0'
-    corr19: '0'
-    corr2: '0'
-    corr20: '0'
-    corr21: '0'
-    corr22: '0'
-    corr23: '0'
-    corr24: '0'
-    corr25: '0'
-    corr26: '0'
-    corr27: '0'
-    corr28: '0'
-    corr29: '0'
-    corr3: '0'
-    corr30: '0'
-    corr31: '0'
-    corr4: '0'
-    corr5: '0'
-    corr6: '0'
-    corr7: '0'
-    corr8: '0'
-    corr9: '0'
-    dc_offset_mode0: '0'
-    dc_offset_mode1: '0'
-    dc_offset_mode10: '0'
-    dc_offset_mode11: '0'
-    dc_offset_mode12: '0'
-    dc_offset_mode13: '0'
-    dc_offset_mode14: '0'
-    dc_offset_mode15: '0'
-    dc_offset_mode16: '0'
-    dc_offset_mode17: '0'
-    dc_offset_mode18: '0'
-    dc_offset_mode19: '0'
-    dc_offset_mode2: '0'
-    dc_offset_mode20: '0'
-    dc_offset_mode21: '0'
-    dc_offset_mode22: '0'
-    dc_offset_mode23: '0'
-    dc_offset_mode24: '0'
-    dc_offset_mode25: '0'
-    dc_offset_mode26: '0'
-    dc_offset_mode27: '0'
-    dc_offset_mode28: '0'
-    dc_offset_mode29: '0'
-    dc_offset_mode3: '0'
-    dc_offset_mode30: '0'
-    dc_offset_mode31: '0'
-    dc_offset_mode4: '0'
-    dc_offset_mode5: '0'
-    dc_offset_mode6: '0'
-    dc_offset_mode7: '0'
-    dc_offset_mode8: '0'
-    dc_offset_mode9: '0'
-    freq0: center_freq
-    freq1: 100e6
-    freq10: 100e6
-    freq11: 100e6
-    freq12: 100e6
-    freq13: 100e6
-    freq14: 100e6
-    freq15: 100e6
-    freq16: 100e6
-    freq17: 100e6
-    freq18: 100e6
-    freq19: 100e6
-    freq2: 100e6
-    freq20: 100e6
-    freq21: 100e6
-    freq22: 100e6
-    freq23: 100e6
-    freq24: 100e6
-    freq25: 100e6
-    freq26: 100e6
-    freq27: 100e6
-    freq28: 100e6
-    freq29: 100e6
-    freq3: 100e6
-    freq30: 100e6
-    freq31: 100e6
-    freq4: 100e6
-    freq5: 100e6
-    freq6: 100e6
-    freq7: 100e6
-    freq8: 100e6
-    freq9: 100e6
-    gain0: gain
-    gain1: '10'
-    gain10: '10'
-    gain11: '10'
-    gain12: '10'
-    gain13: '10'
-    gain14: '10'
-    gain15: '10'
-    gain16: '10'
-    gain17: '10'
-    gain18: '10'
-    gain19: '10'
-    gain2: '10'
-    gain20: '10'
-    gain21: '10'
-    gain22: '10'
-    gain23: '10'
-    gain24: '10'
-    gain25: '10'
-    gain26: '10'
-    gain27: '10'
-    gain28: '10'
-    gain29: '10'
-    gain3: '10'
-    gain30: '10'
-    gain31: '10'
-    gain4: '10'
-    gain5: '10'
-    gain6: '10'
-    gain7: '10'
-    gain8: '10'
-    gain9: '10'
-    gain_mode0: 'False'
-    gain_mode1: 'False'
-    gain_mode10: 'False'
-    gain_mode11: 'False'
-    gain_mode12: 'False'
-    gain_mode13: 'False'
-    gain_mode14: 'False'
-    gain_mode15: 'False'
-    gain_mode16: 'False'
-    gain_mode17: 'False'
-    gain_mode18: 'False'
-    gain_mode19: 'False'
-    gain_mode2: 'False'
-    gain_mode20: 'False'
-    gain_mode21: 'False'
-    gain_mode22: 'False'
-    gain_mode23: 'False'
-    gain_mode24: 'False'
-    gain_mode25: 'False'
-    gain_mode26: 'False'
-    gain_mode27: 'False'
-    gain_mode28: 'False'
-    gain_mode29: 'False'
-    gain_mode3: 'False'
-    gain_mode30: 'False'
-    gain_mode31: 'False'
-    gain_mode4: 'False'
-    gain_mode5: 'False'
-    gain_mode6: 'False'
-    gain_mode7: 'False'
-    gain_mode8: 'False'
-    gain_mode9: 'False'
-    if_gain0: gain
-    if_gain1: '20'
-    if_gain10: '20'
-    if_gain11: '20'
-    if_gain12: '20'
-    if_gain13: '20'
-    if_gain14: '20'
-    if_gain15: '20'
-    if_gain16: '20'
-    if_gain17: '20'
-    if_gain18: '20'
-    if_gain19: '20'
-    if_gain2: '20'
-    if_gain20: '20'
-    if_gain21: '20'
-    if_gain22: '20'
-    if_gain23: '20'
-    if_gain24: '20'
-    if_gain25: '20'
-    if_gain26: '20'
-    if_gain27: '20'
-    if_gain28: '20'
-    if_gain29: '20'
-    if_gain3: '20'
-    if_gain30: '20'
-    if_gain31: '20'
-    if_gain4: '20'
-    if_gain5: '20'
-    if_gain6: '20'
-    if_gain7: '20'
-    if_gain8: '20'
-    if_gain9: '20'
-    iq_balance_mode0: '0'
-    iq_balance_mode1: '0'
-    iq_balance_mode10: '0'
-    iq_balance_mode11: '0'
-    iq_balance_mode12: '0'
-    iq_balance_mode13: '0'
-    iq_balance_mode14: '0'
-    iq_balance_mode15: '0'
-    iq_balance_mode16: '0'
-    iq_balance_mode17: '0'
-    iq_balance_mode18: '0'
-    iq_balance_mode19: '0'
-    iq_balance_mode2: '0'
-    iq_balance_mode20: '0'
-    iq_balance_mode21: '0'
-    iq_balance_mode22: '0'
-    iq_balance_mode23: '0'
-    iq_balance_mode24: '0'
-    iq_balance_mode25: '0'
-    iq_balance_mode26: '0'
-    iq_balance_mode27: '0'
-    iq_balance_mode28: '0'
-    iq_balance_mode29: '0'
-    iq_balance_mode3: '0'
-    iq_balance_mode30: '0'
-    iq_balance_mode31: '0'
-    iq_balance_mode4: '0'
-    iq_balance_mode5: '0'
-    iq_balance_mode6: '0'
-    iq_balance_mode7: '0'
-    iq_balance_mode8: '0'
-    iq_balance_mode9: '0'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    nchan: '1'
-    num_mboards: '1'
-    sample_rate: samp_rate
-    sync: sync
-    time_source0: ''
-    time_source1: ''
-    time_source2: ''
-    time_source3: ''
-    time_source4: ''
-    time_source5: ''
-    time_source6: ''
-    time_source7: ''
-    type: fc32
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [32, 1036.0]
-    rotation: 0
-    state: enabled
 - name: xcorrelate_ExtractDelay_0
   id: xcorrelate_ExtractDelay
   parameters:
@@ -2740,14 +1838,14 @@ blocks:
     index_to_extract: '0'
     lock: lock_output
     maxoutbuf: '0'
-    minCorrScore: min_corr_score
+    minCorrScore: '0.6'
     minoutbuf: '0'
     target: delay_0
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1016, 612.0]
+    coordinate: [896, 660.0]
     rotation: 0
     state: enabled
 - name: xcorrelate_ExtractDelay_0_0
@@ -2756,115 +1854,97 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    index_to_extract: '1'
+    index_to_extract: '0'
     lock: lock_output
     maxoutbuf: '0'
-    minCorrScore: min_corr_score
+    minCorrScore: '0.6'
     minoutbuf: '0'
-    target: delay_1
+    target: delay_fft
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1040, 708.0]
+    coordinate: [1024, 788.0]
     rotation: 0
     state: enabled
-- name: xcorrelate_ExtractDelay_0_0_0
-  id: xcorrelate_ExtractDelay
+- name: xcorrelate_xcorrelate_fft_vcf_0
+  id: xcorrelate_xcorrelate_fft_vcf
   parameters:
     affinity: ''
     alias: ''
     comment: ''
-    index_to_extract: '2'
-    lock: lock_output
     maxoutbuf: '0'
-    minCorrScore: min_corr_score
     minoutbuf: '0'
-    target: delay_2
+    vec_len: corr_frame_size
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1048, 796.0]
+    coordinate: [864, 760.0]
     rotation: 0
-    state: enabled
-- name: xcorrelate_xcorrelate_0
-  id: xcorrelate_xcorrelate
+    state: true
+- name: xcorrelate_xcorrelate_xtream_0
+  id: xcorrelate_xcorrelate_xtream
   parameters:
-    affinity: '0'
+    affinity: ''
     alias: ''
-    async: 'True'
     comment: ''
     decim_frames: corr_frame_decim
     max_search_offset: max_search
     maxoutbuf: '0'
     minoutbuf: '0'
-    num_inputs: '4'
+    normalize: 'True'
+    num_inputs: '2'
     signal_length: corr_frame_size
     type: float
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [784, 608.0]
+    coordinate: [736, 592.0]
     rotation: 0
-    state: enabled
+    state: true
 
 connections:
 - [analog_wfm_rcv_0, '0', rational_resampler_xxx_0_0, '0']
-- [blocks_add_xx_0, '0', blocks_complex_to_mag_0_0_0_1, '0']
 - [blocks_add_xx_0, '0', blocks_keep_one_in_n_0, '0']
 - [blocks_add_xx_0, '0', logpwrfft_x_0_0, '0']
-- [blocks_add_xx_0, '0', qtgui_freq_sink_x_0, '4']
-- [blocks_add_xx_0, '0', qtgui_freq_sink_x_0_0, '0']
 - [blocks_add_xx_0, '0', qtgui_waterfall_sink_x_0, '0']
-- [blocks_complex_to_mag_0, '0', qtgui_time_sink_x_0, '0']
-- [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_0, '0']
-- [blocks_complex_to_mag_0_0, '0', qtgui_time_sink_x_0, '1']
-- [blocks_complex_to_mag_0_0, '0', xcorrelate_xcorrelate_0, '1']
-- [blocks_complex_to_mag_0_0_0, '0', qtgui_time_sink_x_0, '2']
-- [blocks_complex_to_mag_0_0_0, '0', xcorrelate_xcorrelate_0, '2']
-- [blocks_complex_to_mag_0_0_0_0, '0', qtgui_time_sink_x_0, '3']
-- [blocks_complex_to_mag_0_0_0_0, '0', xcorrelate_xcorrelate_0, '3']
-- [blocks_complex_to_mag_0_0_0_1, '0', qtgui_time_sink_x_0, '4']
+- [blocks_complex_to_mag_0, '0', xcorrelate_xcorrelate_xtream_0, '0']
+- [blocks_complex_to_mag_0_0, '0', xcorrelate_xcorrelate_xtream_0, '1']
 - [blocks_delay_0_0_0, '0', blocks_add_xx_0, '1']
-- [blocks_delay_0_0_0_0, '0', blocks_add_xx_0, '2']
-- [blocks_delay_0_0_0_0_0, '0', blocks_add_xx_0, '3']
 - [blocks_keep_one_in_n_0, '0', analog_wfm_rcv_0, '0']
+- [blocks_keep_one_in_n_1, '0', qtgui_vector_sink_f_0, '0']
+- [blocks_keep_one_in_n_1_0, '0', qtgui_vector_sink_f_0_0, '0']
 - [blocks_max_xx_0, '0', blocks_sub_xx_0, '0']
 - [blocks_max_xx_0, '0', qtgui_number_sink_0, '0']
 - [blocks_max_xx_0_0, '0', blocks_sub_xx_0, '1']
 - [blocks_max_xx_0_0, '0', qtgui_number_sink_0, '1']
 - [blocks_multiply_const_vxx_0, '0', audio_sink_0, '0']
 - [blocks_multiply_const_vxx_0_0, '0', qtgui_number_sink_0_0_0, '0']
+- [blocks_stream_to_vector_0, '0', fft_vxx_0, '0']
+- [blocks_stream_to_vector_1, '0', fft_vxx_0_0, '0']
 - [blocks_sub_xx_0, '0', blocks_multiply_const_vxx_0_0, '0']
-- [correctiq_correctiq_auto_0, '0', lfast_low_pass_filter_0_0_0_0_0, '0']
-- [correctiq_correctiq_auto_0_0, '0', lfast_low_pass_filter_0_0_0_0, '0']
-- [correctiq_correctiq_auto_0_0_0, '0', lfast_low_pass_filter_0_0_0, '0']
 - [correctiq_correctiq_auto_0_0_0_0, '0', lfast_low_pass_filter_0_0, '0']
+- [correctiq_correctiq_auto_0_0_0_0_0, '0', lfast_low_pass_filter_0_0_0, '0']
+- [fft_vxx_0, '0', xcorrelate_xcorrelate_fft_vcf_0, '0']
+- [fft_vxx_0_0, '0', xcorrelate_xcorrelate_fft_vcf_0, '1']
 - [lfast_low_pass_filter_0_0, '0', blocks_add_xx_0, '0']
 - [lfast_low_pass_filter_0_0, '0', blocks_complex_to_mag_0, '0']
+- [lfast_low_pass_filter_0_0, '0', blocks_stream_to_vector_0, '0']
 - [lfast_low_pass_filter_0_0, '0', logpwrfft_x_0, '0']
-- [lfast_low_pass_filter_0_0, '0', qtgui_freq_sink_x_0, '0']
 - [lfast_low_pass_filter_0_0_0, '0', blocks_complex_to_mag_0_0, '0']
 - [lfast_low_pass_filter_0_0_0, '0', blocks_delay_0_0_0, '0']
-- [lfast_low_pass_filter_0_0_0, '0', qtgui_freq_sink_x_0, '1']
-- [lfast_low_pass_filter_0_0_0_0, '0', blocks_complex_to_mag_0_0_0, '0']
-- [lfast_low_pass_filter_0_0_0_0, '0', blocks_delay_0_0_0_0, '0']
-- [lfast_low_pass_filter_0_0_0_0, '0', qtgui_freq_sink_x_0, '2']
-- [lfast_low_pass_filter_0_0_0_0_0, '0', blocks_complex_to_mag_0_0_0_0, '0']
-- [lfast_low_pass_filter_0_0_0_0_0, '0', blocks_delay_0_0_0_0_0, '0']
-- [lfast_low_pass_filter_0_0_0_0_0, '0', qtgui_freq_sink_x_0, '3']
+- [lfast_low_pass_filter_0_0_0, '0', blocks_stream_to_vector_1, '0']
 - [logpwrfft_x_0, '0', blocks_max_xx_0, '0']
 - [logpwrfft_x_0_0, '0', blocks_max_xx_0_0, '0']
 - [rational_resampler_xxx_0_0, '0', blocks_multiply_const_vxx_0, '0']
 - [rtlsdr_source_0, '0', correctiq_correctiq_auto_0_0_0_0, '0']
-- [rtlsdr_source_0_0, '0', correctiq_correctiq_auto_0_0_0, '0']
-- [rtlsdr_source_0_0_0, '0', correctiq_correctiq_auto_0_0, '0']
-- [rtlsdr_source_0_0_0_0, '0', correctiq_correctiq_auto_0, '0']
-- [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0, corr]
-- [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0_0, corr]
-- [xcorrelate_xcorrelate_0, corr, xcorrelate_ExtractDelay_0_0_0, corr]
+- [rtlsdr_source_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0, '0']
+- [xcorrelate_xcorrelate_fft_vcf_0, '0', blocks_keep_one_in_n_1_0, '0']
+- [xcorrelate_xcorrelate_fft_vcf_0, corrmsg, xcorrelate_ExtractDelay_0_0, corr]
+- [xcorrelate_xcorrelate_xtream_0, '0', blocks_keep_one_in_n_1, '0']
+- [xcorrelate_xcorrelate_xtream_0, corr, xcorrelate_ExtractDelay_0, corr]
 
 metadata:
   file_format: 1
