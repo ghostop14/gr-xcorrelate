@@ -1,5 +1,5 @@
 id: xcorrelate_xcorrelate_fft_vcf
-label: xcorrelate freq
+label: Ref Correlate FD
 category: '[Cross Correlation]'
 
 parameters:
