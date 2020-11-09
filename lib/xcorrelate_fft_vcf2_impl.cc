@@ -758,7 +758,7 @@ int xcorrelate_fft_vcf2_impl::work_test(
 		rev_fft->execute();
 
 		// complex to mag
-		volk_32fc_magnitude_32f_u(tmp_buffer, rev_fft->get_outbuf(), d_vlen);
+		volk_32fc_magnitude_32f(tmp_buffer, rev_fft->get_outbuf(), d_vlen);
 
 		// shift fft
 		memcpy(out, &tmp_buffer[vlen_2], data_size_2);
@@ -809,7 +809,7 @@ xcorrelate_fft_vcf2_impl::work(int noutput_items,
 		rev_fft->execute();
 
 		// complex to mag
-		volk_32fc_magnitude_32f_u(tmp_buffer, rev_fft->get_outbuf(), d_vlen);
+		volk_32fc_magnitude_32f(tmp_buffer, rev_fft->get_outbuf(), d_vlen);
 
 		// shift fft
 		memcpy(out, &tmp_buffer[vlen_2], data_size_2);
