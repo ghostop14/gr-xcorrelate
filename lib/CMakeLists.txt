@@ -24,7 +24,8 @@
 include(GrPlatform) #define LIB_SUFFIX
 list(APPEND xcorrelate_sources
     xcorrelate_impl.cc
-    xcorrelate_fft_vcf2_impl.cc )
+    xcorrelate_fft_vcf2_impl.cc
+    xcorrelate_engine_impl.cc )
 
 set(xcorrelate_sources "${xcorrelate_sources}" PARENT_SCOPE)
 if(NOT xcorrelate_sources)
