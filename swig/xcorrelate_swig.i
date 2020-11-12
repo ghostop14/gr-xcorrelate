@@ -11,6 +11,7 @@
 #include "xcorrelate/xcorrelate.h"
 #include "xcorrelate/xcorrelate_fft_vcf2.h"
 #include "xcorrelate/xcorrelate_engine.h"
+#include "xcorrelate/triangular_to_full.h"
 %}
 
 %include "xcorrelate/xcorrelate.h"
@@ -19,3 +20,5 @@ GR_SWIG_BLOCK_MAGIC2(xcorrelate, xcorrelate);
 GR_SWIG_BLOCK_MAGIC2(xcorrelate, xcorrelate_fft_vcf2);
 %include "xcorrelate/xcorrelate_engine.h"
 GR_SWIG_BLOCK_MAGIC2(xcorrelate, xcorrelate_engine);
+%include "xcorrelate/triangular_to_full.h"
+GR_SWIG_BLOCK_MAGIC2(xcorrelate, triangular_to_full);

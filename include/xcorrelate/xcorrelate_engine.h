@@ -679,7 +679,8 @@
 #define INCLUDED_XCORRELATE_XCORRELATE_ENGINE_H
 
 #include <xcorrelate/api.h>
-#include <gnuradio/sync_block.h>
+#include <gnuradio/block.h>
+// #include <gnuradio/sync_block.h>
 
 namespace gr {
   namespace xcorrelate {
@@ -689,7 +690,7 @@ namespace gr {
      * \ingroup xcorrelate
      *
      */
-    class XCORRELATE_API xcorrelate_engine : virtual public gr::sync_block
+    class XCORRELATE_API xcorrelate_engine : virtual public gr::block
     {
      public:
       typedef boost::shared_ptr<xcorrelate_engine> sptr;
@@ -702,7 +703,7 @@ namespace gr {
        * class. xcorrelate::xcorrelate_engine::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int polarization, int num_inputs, int output_format, int num_channels);
+      static sptr make(int polarization, int num_inputs, int output_format, int num_channels, int integration);
     };
 
   } // namespace xcorrelate

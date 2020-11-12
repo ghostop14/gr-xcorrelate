@@ -1861,6 +1861,24 @@ blocks:
     coordinate: [0, 1036.0]
     rotation: 0
     state: enabled
+- name: xcorrelate_triangular_to_full_0
+  id: xcorrelate_triangular_to_full
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    integration: '1024'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_inputs: '4'
+    polarization: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1208, 500.0]
+    rotation: 0
+    state: true
 - name: xcorrelate_xcorrelate_engine_0
   id: xcorrelate_xcorrelate_engine
   parameters:
@@ -1871,7 +1889,6 @@ blocks:
     minoutbuf: '0'
     num_channels: '1024'
     num_inputs: '4'
-    output_format: '1'
     polarization: '1'
   states:
     bus_sink: false
@@ -1903,6 +1920,7 @@ connections:
 - [rtlsdr_source_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0, '0']
 - [rtlsdr_source_0_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0_0, '0']
 - [rtlsdr_source_0_0_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0_0_0, '0']
+- [xcorrelate_xcorrelate_engine_0, xcorr, xcorrelate_triangular_to_full_0, triang]
 
 metadata:
   file_format: 1

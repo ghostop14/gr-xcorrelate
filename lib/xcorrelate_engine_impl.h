@@ -686,31 +686,11 @@
 namespace gr {
 namespace xcorrelate {
 
-class CComplex {
-public:
+struct XComplexStruct {
 	float real = 0.0f;
 	float imag = 0.0f;
-
-	CComplex() {};
-	virtual ~CComplex() {};
-
-	CComplex& operator=(const CComplex& other) {
-		real = other.real;
-		imag = other.imag;
-	}
-
-	CComplex& operator+=(const CComplex& other) {
-		real += other.real;
-		imag += other.imag;
-	}
-
-	void cxmac(CComplex& z0, CComplex& z1) {
-		// This is just a complex multiply and add
-		real += (float)z0.real * (float)z1.real + (float)z0.imag * (float)z1.imag;
-		imag += (float)z0.imag * (float)z1.real - (float)z0.real * (float)z1.imag;
-	}
-
 };
+typedef struct XComplexStruct XComplex;
 
 class xcorrelate_engine_impl : public xcorrelate_engine
 {
@@ -722,29 +702,36 @@ protected:
 	int d_output_format;
 	int d_num_channels;
 	int d_num_baselines;
+	int d_integration_time;
 	int input_size;
 	int num_chan_x2;
 	size_t matrix_flat_length;
 	int output_size;
 
+	void cxmac(XComplex& accum, XComplex& z0, XComplex& z1) {
+		accum.real += z0.real * z1.real + z0.imag * z1.imag;
+		accum.imag += z0.imag * z1.real - z0.real * z1.imag;
+	}
+
 public:
-	xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels);
+	xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration);
 	~xcorrelate_engine_impl();
 
 	bool stop();
 
-	void xcorrelate(CComplex *input_matrix, CComplex *cross_correlation);
+	void xcorrelate(XComplex *input_matrix, XComplex *cross_correlation);
+
+    void forecast (int noutput_items, gr_vector_int &ninput_items_required);
 
 	int work_test(
 			int noutput_items,
 			gr_vector_const_void_star &input_items,
 			gr_vector_void_star &output_items
 	);
-	int work(
-			int noutput_items,
-			gr_vector_const_void_star &input_items,
-			gr_vector_void_star &output_items
-	);
+    int general_work(int noutput_items,
+         gr_vector_int &ninput_items,
+         gr_vector_const_void_star &input_items,
+         gr_vector_void_star &output_items);
 };
 
 } // namespace xcorrelate

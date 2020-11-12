@@ -25,5 +25,6 @@ install(FILES
     api.h
     xcorrelate.h
     xcorrelate_fft_vcf2.h
-    xcorrelate_engine.h DESTINATION include/xcorrelate
+    xcorrelate_engine.h
+    triangular_to_full.h DESTINATION include/xcorrelate
 )

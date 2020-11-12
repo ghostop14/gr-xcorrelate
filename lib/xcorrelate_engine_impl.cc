@@ -686,35 +686,37 @@ namespace gr {
 namespace xcorrelate {
 
 xcorrelate_engine::sptr
-xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int num_channels)
+xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int num_channels, int integration)
 {
 	return gnuradio::get_initial_sptr
-			(new xcorrelate_engine_impl(polarization, num_inputs, output_format, num_channels));
+			(new xcorrelate_engine_impl(polarization, num_inputs, output_format, num_channels,integration));
 }
 
 
 /*
  * The private constructor
  */
-xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels)
-: gr::sync_block("xcorrelate_engine",
+xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration)
+: gr::block("xcorrelate_engine",
 		gr::io_signature::make(2, num_inputs, num_channels*sizeof(gr_complex)),
 		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_output_format(output_format),
-		d_num_channels(num_channels)
+		d_num_channels(num_channels), d_integration_time(integration)
 {
 	// See "Accelerating Radio Astronomy Cross-Correlation with Graphics Processing Units" by M. A. Clark
 	// and xGPU on github for reference documentation and reference implementation.
 
 	d_num_baselines = (d_num_inputs+1)*d_num_inputs / 2;
+
+	// Input size is the size of one sampling vector.  Basically the channel's data
 	input_size = d_num_channels * sizeof(gr_complex);
 
 	num_chan_x2 = d_num_channels * 2;
 
-	complex_input = new gr_complex[d_num_inputs * d_num_channels * d_npol];
+	complex_input = new gr_complex[d_num_inputs * d_num_channels * d_npol*d_integration_time];
 
 	if (output_format == XCORR_TRIANGULAR_ORDER) {
 		// This is only the lower triangular matrix size (including the autocorrelation diagonal
-		matrix_flat_length = d_num_channels * ((d_num_inputs+1)*(d_num_inputs/2)*d_npol*d_npol);
+		matrix_flat_length = d_num_channels * d_num_baselines * d_npol * d_npol;
 		output_matrix = new gr_complex[matrix_flat_length];
 	}
 	else {
@@ -751,14 +753,18 @@ xcorrelate_engine_impl::~xcorrelate_engine_impl()
 	bool ret_val = stop();
 }
 
-void xcorrelate_engine_impl::xcorrelate(CComplex *input_matrix, CComplex *cross_correlation) {
+/*
+ * This version's not correct.  But keeping for reference.
+ *
+void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
 	// This is adapted directly from xGPU's omp_xengine.c
 	int i, t;
+	int NTIME=1; // placeholder for integration time
 
 	// Reset the output
 	memset(output_matrix,0x00,output_size);
 
-	CComplex inputRowX, inputRowY, inputColX, inputColY;
+	XComplex inputRowX, inputRowY, inputColX, inputColY;
 	for (int i=0;i<d_num_baselines;i++) {
 		// Calculate each station from the global index
 		// See apps/test_indices.py for printing the station pairs as calculated.
@@ -769,48 +775,73 @@ void xcorrelate_engine_impl::xcorrelate(CComplex *input_matrix, CComplex *cross_
 		int station2 = k - ((station1+1)*station1)/2;
 
 		for (int chan=0;chan<d_num_channels;chan++) {
-			inputRowX = input_matrix[station1*d_num_channels*d_npol+chan];
-			inputColX = input_matrix[station2*d_num_channels*d_npol+chan];
+			// inputRowX = input_matrix[station1*d_num_channels*d_npol+chan*d_npol];
+			// inputColX = input_matrix[station2*d_num_channels*d_npol+chan*d_npol];
+			inputRowX = input_matrix[(station1*d_num_channels+chan)*d_npol];
+			inputColX = input_matrix[(station2*d_num_channels+chan)*d_npol];
 
 			if (d_npol == 1) {
-				cross_correlation[i].cxmac(inputRowX, inputColX);
+				// cxmac = Complex Multiply and Accumulate
+				cxmac(cross_correlation[i],inputRowX, inputColX);
 			}
 			else {
-				inputRowY = input_matrix[station1*d_num_channels*d_npol + chan + 1];
-				inputColY = input_matrix[station2*d_num_channels*d_npol + chan + 1];
+				// inputRowY = input_matrix[station1*d_num_channels*d_npol + chan*d_npol + 1];
+				// inputColY = input_matrix[station2*d_num_channels*d_npol + chan*d_npol + 1];
+				inputRowY = input_matrix[(station1*d_num_channels+chan)*d_npol + 1];
+				inputColY = input_matrix[(station2*d_num_channels+chan)*d_npol + 1];
 
-				cross_correlation[4*i    ].cxmac(inputRowX, inputColX);
-				cross_correlation[4*i + 1].cxmac(inputRowX, inputColY);
-				cross_correlation[4*i + 2].cxmac(inputRowY, inputColX);
-				cross_correlation[4*i + 3].cxmac(inputRowY, inputColY);
+				cxmac(cross_correlation[4*i    ], inputRowX, inputColX);
+				cxmac(cross_correlation[4*i + 1], inputRowX, inputColY);
+				cxmac(cross_correlation[4*i + 2], inputRowY, inputColX);
+				cxmac(cross_correlation[4*i + 3], inputRowY, inputColY);
 			}
 		}
 	}
-	/*
+}
+*/
+
+void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
+	// This is adapted directly from xGPU's omp_xengine.c
+	int i, t;
+
+	// Reset the output
+	memset(output_matrix,0x00,output_size);
+
 	for(i=0; i<d_num_channels*d_num_baselines; i++){
 		int f = i/d_num_baselines;
 		int k = i - f*d_num_baselines;
 		int station1 = -0.5 + sqrt(0.25 + 2*k);
 		int station2 = k - ((station1+1)*station1)/2;
-		CComplex inputRowX, inputRowY, inputColX, inputColY;
+		XComplex sumXX; sumXX.real = 0.0; sumXX.imag = 0.0;
+		XComplex sumXY; sumXY.real = 0.0; sumXY.imag = 0.0;
+		XComplex sumYX; sumYX.real = 0.0; sumYX.imag = 0.0;
+		XComplex sumYY; sumYY.real = 0.0; sumYY.imag = 0.0;
+		XComplex inputRowX, inputRowY, inputColX, inputColY;
 
-		inputRowX = input_matrix[(f*d_num_inputs + station1)*d_npol];
-		inputColX = input_matrix[(f*d_num_inputs + station2)*d_npol];
+		for(t=0; t<d_integration_time; t++){
+			inputRowX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol];
+			inputColX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol];
 
+			cxmac(sumXX, inputRowX, inputColX);
+			if (d_npol > 1) {
+				inputRowY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol + 1];
+				inputColY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol + 1];
+
+				cxmac(sumXY, inputRowX, inputColY);
+				cxmac(sumYX, inputRowY, inputColX);
+				cxmac(sumYY, inputRowY, inputColY);
+			}
+		}
 		if (d_npol == 1) {
-			cross_correlation[i].cxmac(inputRowX, inputColX);
+			cross_correlation[i    ] = sumXX;
 		}
 		else {
-			inputRowY = input_matrix[(f*d_num_inputs + station1)*d_npol + 1];
-			inputColY = input_matrix[(f*d_num_inputs + station2)*d_npol + 1];
-
-			cross_correlation[4*i    ].cxmac(inputRowX, inputColX);
-			cross_correlation[4*i + 1].cxmac(inputRowX, inputColY);
-			cross_correlation[4*i + 2].cxmac(inputRowY, inputColX);
-			cross_correlation[4*i + 3].cxmac(inputRowY, inputColY);
+			cross_correlation[4*i    ] = sumXX;
+			cross_correlation[4*i + 1] = sumXY;
+			cross_correlation[4*i + 2] = sumYX;
+			cross_correlation[4*i + 3] = sumYY;
 		}
 	}
-	*/
 }
 
 int
@@ -825,11 +856,13 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 	// For dual polarization, we have to interleave them so it's
 	// x0r x0i y0r y0i.....
 
-	for (int cur_block=0;cur_block<noutput_items;cur_block++) {
+	for (int cur_block=0;cur_block<noutput_items*d_integration_time;cur_block++) {
+		int input_start = d_num_channels*d_num_inputs*d_npol * cur_block;
+
 		if (d_npol == 1) {
 			for (int i=0;i<d_num_inputs;i++) {
 				const gr_complex *cur_signal = (const gr_complex *) input_items[i];
-				memcpy(&complex_input[i*d_num_channels],&cur_signal[cur_block*d_num_channels],d_num_channels*sizeof(gr_complex));
+				memcpy(&complex_input[input_start + i*d_num_channels],&cur_signal[cur_block*d_num_channels],d_num_channels*sizeof(gr_complex));
 			}
 		}
 		else {
@@ -838,24 +871,41 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 				const gr_complex *pol1 = (const gr_complex *) input_items[i];
 				const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
 
+				// Each interleaved channel will now be num_channels*2 long
+				// X Y X Y X Y...
 				for (int k=0;k<num_chan_x2;k+=2) {
-					complex_input[i*num_chan_x2+k] = pol1[cur_block*d_num_channels+k];
-					complex_input[i*num_chan_x2+k+1] = pol2[cur_block*d_num_channels+k];
+					complex_input[input_start + i*num_chan_x2+k] = pol1[cur_block*d_num_channels+k/2];
+					complex_input[input_start + i*num_chan_x2+k+1] = pol2[cur_block*d_num_channels+k/2];
 				}
 			}
 		}
 
-		xcorrelate((CComplex *)complex_input, (CComplex *)output_matrix);
 	}
+
+	xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
 
 	// Tell runtime system how many output items we produced.
 	return noutput_items;
 }
 
+void
+xcorrelate_engine_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
+{
+	/* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
+	for (int i=0;i<d_num_inputs;i++) {
+		ninput_items_required[i] = noutput_items * d_integration_time;
+
+		if (d_npol > 1) {
+			ninput_items_required[i + d_num_inputs] = noutput_items * d_integration_time;
+		}
+	}
+}
+
 int
-xcorrelate_engine_impl::work(int noutput_items,
-		gr_vector_const_void_star &input_items,
-		gr_vector_void_star &output_items)
+xcorrelate_engine_impl::general_work(int noutput_items,
+     gr_vector_int &ninput_items,
+     gr_vector_const_void_star &input_items,
+     gr_vector_void_star &output_items)
 {
 	gr::thread::scoped_lock guard(d_setlock);
 
@@ -884,13 +934,11 @@ xcorrelate_engine_impl::work(int noutput_items,
 			}
 		}
 
-		xcorrelate((CComplex *)complex_input, (CComplex *)output_matrix);
+		xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
 
-		pmt::pmt_t meta = pmt::make_dict();
 		pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,output_matrix));
-		meta = pmt::dict_add(meta, pmt::mp("corr_matrix"), corr_out);
 
-		pmt::pmt_t pdu = pmt::cons(meta, pmt::PMT_NIL);
+		pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("triang_matrix"), corr_out);
 		message_port_pub(pmt::mp("xcorr"), pdu);
 	}
 

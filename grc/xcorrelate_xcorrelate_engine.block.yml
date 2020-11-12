@@ -16,12 +16,13 @@ parameters:
   label: Num Antennas
   dtype: int
   default: '2'
-- id: output_format
-  label: Output Format
-  dtype: enum
-  options: ['1', '2']
-  option_labels: ['Triangular Order', 'Full Matrix']
-  hide: part
+- id: integration
+  label: Integration NTIME
+  dtype: int
+  default: '1024'
+
+asserts:
+- ${ num_inputs > 1 }
 
 inputs:
 - label: pol1_
@@ -43,20 +44,21 @@ outputs:
 
 templates:
   imports: import xcorrelate
-  make: xcorrelate.xcorrelate_engine(${polarization}, ${num_inputs}, ${output_format}, ${num_channels})
+  make: xcorrelate.xcorrelate_engine(${polarization}, ${num_inputs}, 1, ${num_channels}, ${integration})
 
 documentation: "This block provides the full signal cross correlation function (X) of\
     \ an FX correlator. The block assumes the input stream is complex FFT vectors of\
     \ the specified channel length, where a channel represents an fft bin.\
     \ For instance, a 1024 FFT would be considered 1024 channels of width Bandwidth/channels.\
-    \ The output format can be either a full Cross-correlation matrix, or just the Hermitian\
-    \ lower triangular matrix.  In the latter case, the data is in a format called Triangular\
+    \ The output format  is in a format called Triangular\
     \ Order where element 1 is row/column [0,0], element 2 is [1,0], element 3 is [1,1],\
     \ element 4 is [2,0] following the lower half of the matrix up to the diagonal in each row.\
+    \ Note that for X/Y polarization, each cell will be xx, xy, yx, yy, so the output stream size\
+    \ will be 4x the size of the single polarization matrix.\
     \ This approach does save space in memory and for transmission, so it provides an efficient\
     \ format for those types of activities.  To complete the full matrix, each missing transposed\
     \ cell is the complex conjugate.  So [0,1] is the complex conjugate of [1,0], etc.\
-    \ For full matrix output, the block completes the 2-dimensional complete matrix."
+    \ For full matrix output, the block completes the 2-dimensional full matrix."
 
 #  'file_format' specifies the version of the GRC yml format used in the file
 #  and should usually not be changed.

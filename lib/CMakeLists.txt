@@ -25,7 +25,8 @@ include(GrPlatform) #define LIB_SUFFIX
 list(APPEND xcorrelate_sources
     xcorrelate_impl.cc
     xcorrelate_fft_vcf2_impl.cc
-    xcorrelate_engine_impl.cc )
+    xcorrelate_engine_impl.cc
+    triangular_to_full_impl.cc )
 
 set(xcorrelate_sources "${xcorrelate_sources}" PARENT_SCOPE)
 if(NOT xcorrelate_sources)
@@ -54,7 +55,7 @@ include(GrMiscUtils)
 GR_LIBRARY_FOO(gnuradio-xcorrelate)
 
 ########################################################################
-# Build and register test-xcorrelate
+# Build and register test-xcorrelator
 ########################################################################
 list(APPEND test_xcorrelator_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/test-xcorrelate.cc
@@ -72,7 +73,25 @@ target_link_libraries(
   gnuradio-xcorrelate
 )
 
-install(TARGETS test-xcorrelator DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" RUNTIME)
+########################################################################
+# Build and register test-xengine
+########################################################################
+list(APPEND test_xengine_sources
+    ${CMAKE_CURRENT_SOURCE_DIR}/test-xengine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/xcorrelate_engine_impl.cc
+)
+
+add_executable(test-xengine ${test_xengine_sources})
+
+target_link_libraries(
+  test-xengine
+  ${GNURADIO_RUNTIME_LIBRARIES}
+  ${Boost_LIBRARIES}
+  volk
+  gnuradio-xcorrelate
+)
+
+install(TARGETS test-xengine DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" RUNTIME)
 
 
 ########################################################################
