@@ -679,6 +679,10 @@
 #include "config.h"
 #endif
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include <gnuradio/io_signature.h>
 #include "xcorrelate_engine_impl.h"
 
@@ -726,6 +730,13 @@ xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs,
 	}
 
 	output_size = matrix_flat_length * sizeof(gr_complex);
+
+#ifdef _OPENMP
+	num_procs = omp_get_num_procs();
+	std::cout << "Using OpenMP with " << num_procs << " processes." << std::endl;
+#else
+	std::cout << "Using standard CPU thread for processing (install libomp to increase throughput)" << std::endl;
+#endif
 
 	message_port_register_out(pmt::mp("xcorr"));
 }
@@ -798,50 +809,54 @@ void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_
 		}
 	}
 }
-*/
+ */
 
 void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
-	// This is adapted directly from xGPU's omp_xengine.c
-	int i, t;
-
 	// Reset the output
 	memset(output_matrix,0x00,output_size);
 
-	for(i=0; i<d_num_channels*d_num_baselines; i++){
-		int f = i/d_num_baselines;
-		int k = i - f*d_num_baselines;
-		int station1 = -0.5 + sqrt(0.25 + 2*k);
-		int station2 = k - ((station1+1)*station1)/2;
-		XComplex sumXX; sumXX.real = 0.0; sumXX.imag = 0.0;
-		XComplex sumXY; sumXY.real = 0.0; sumXY.imag = 0.0;
-		XComplex sumYX; sumYX.real = 0.0; sumYX.imag = 0.0;
-		XComplex sumYY; sumYY.real = 0.0; sumYY.imag = 0.0;
-		XComplex inputRowX, inputRowY, inputColX, inputColY;
+	// This is adapted directly from xGPU's omp_xengine.c
+#pragma omp parallel num_threads(num_procs)
+	{
+		int i, t;
 
-		for(t=0; t<d_integration_time; t++){
-			inputRowX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol];
-			inputColX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol];
+#pragma omp for schedule(dynamic)
+		for(i=0; i<d_num_channels*d_num_baselines; i++){
+			int f = i/d_num_baselines;
+			int k = i - f*d_num_baselines;
+			int station1 = -0.5 + sqrt(0.25 + 2*k);
+			int station2 = k - ((station1+1)*station1)/2;
+			XComplex sumXX; sumXX.real = 0.0; sumXX.imag = 0.0;
+			XComplex sumXY; sumXY.real = 0.0; sumXY.imag = 0.0;
+			XComplex sumYX; sumYX.real = 0.0; sumYX.imag = 0.0;
+			XComplex sumYY; sumYY.real = 0.0; sumYY.imag = 0.0;
+			XComplex inputRowX, inputRowY, inputColX, inputColY;
 
-			cxmac(sumXX, inputRowX, inputColX);
-			if (d_npol > 1) {
-				inputRowY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol + 1];
-				inputColY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol + 1];
+			for(t=0; t<d_integration_time; t++){
+				inputRowX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol];
+				inputColX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol];
 
-				cxmac(sumXY, inputRowX, inputColY);
-				cxmac(sumYX, inputRowY, inputColX);
-				cxmac(sumYY, inputRowY, inputColY);
+				cxmac(sumXX, inputRowX, inputColX);
+				if (d_npol > 1) {
+					inputRowY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol + 1];
+					inputColY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol + 1];
+
+					cxmac(sumXY, inputRowX, inputColY);
+					cxmac(sumYX, inputRowY, inputColX);
+					cxmac(sumYY, inputRowY, inputColY);
+				}
 			}
-		}
-		if (d_npol == 1) {
-			cross_correlation[i    ] = sumXX;
-		}
-		else {
-			cross_correlation[4*i    ] = sumXX;
-			cross_correlation[4*i + 1] = sumXY;
-			cross_correlation[4*i + 2] = sumYX;
-			cross_correlation[4*i + 3] = sumYY;
-		}
-	}
+			if (d_npol == 1) {
+				cross_correlation[i    ] = sumXX;
+			}
+			else {
+				cross_correlation[4*i    ] = sumXX;
+				cross_correlation[4*i + 1] = sumXY;
+				cross_correlation[4*i + 2] = sumYX;
+				cross_correlation[4*i + 3] = sumYY;
+			}
+		} // for i
+	} // openmp
 }
 
 int
@@ -903,9 +918,9 @@ xcorrelate_engine_impl::forecast (int noutput_items, gr_vector_int &ninput_items
 
 int
 xcorrelate_engine_impl::general_work(int noutput_items,
-     gr_vector_int &ninput_items,
-     gr_vector_const_void_star &input_items,
-     gr_vector_void_star &output_items)
+		gr_vector_int &ninput_items,
+		gr_vector_const_void_star &input_items,
+		gr_vector_void_star &output_items)
 {
 	gr::thread::scoped_lock guard(d_setlock);
 

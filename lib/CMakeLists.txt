@@ -35,7 +35,7 @@ if(NOT xcorrelate_sources)
 endif(NOT xcorrelate_sources)
 
 add_library(gnuradio-xcorrelate SHARED ${xcorrelate_sources})
-target_link_libraries(gnuradio-xcorrelate gnuradio::gnuradio-runtime gnuradio-blocks gnuradio-fft volk)
+target_link_libraries(gnuradio-xcorrelate gnuradio::gnuradio-runtime gnuradio-blocks gnuradio-fft volk ${OpenMP_CXX_LIBRARIES})
 target_include_directories(gnuradio-xcorrelate
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
     PUBLIC $<INSTALL_INTERFACE:include>
@@ -69,6 +69,7 @@ target_link_libraries(
   test-xcorrelator
   ${GNURADIO_RUNTIME_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${OpenMP_CXX_LIBRARIES}
   volk
   gnuradio-xcorrelate
 )
@@ -87,6 +88,7 @@ target_link_libraries(
   test-xengine
   ${GNURADIO_RUNTIME_LIBRARIES}
   ${Boost_LIBRARIES}
+  ${OpenMP_CXX_LIBRARIES}
   volk
   gnuradio-xcorrelate
 )

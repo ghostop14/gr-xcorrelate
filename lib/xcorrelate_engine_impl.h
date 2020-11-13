@@ -707,6 +707,7 @@ protected:
 	int num_chan_x2;
 	size_t matrix_flat_length;
 	int output_size;
+	int num_procs;
 
 	void cxmac(XComplex& accum, XComplex& z0, XComplex& z1) {
 		accum.real += z0.real * z1.real + z0.imag * z1.imag;

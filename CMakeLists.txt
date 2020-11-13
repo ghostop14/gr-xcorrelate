@@ -136,6 +136,21 @@ else(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 ########################################################################
+# Find OpenMP
+########################################################################
+find_package(OpenMP)
+
+########################################################################
+# Setup OpenMP option
+########################################################################
+if(OpenMP_CXX_FOUND)
+    option(ENABLE_OPENMP "Enabling OpenMP Support" ON)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
+else(OpenMP_CXX_FOUND)
+    option(ENABLE_OPENMP "OpenMP not found.  Using standard CPU processing." OFF)
+endif(OpenMP_CXX_FOUND)
+
+########################################################################
 # Create uninstall target
 ########################################################################
 configure_file(
