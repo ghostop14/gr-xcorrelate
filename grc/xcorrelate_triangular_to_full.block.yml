@@ -1,0 +1,41 @@
+id: xcorrelate_triangular_to_full
+label: Triangular To Full Matrix
+category: '[Cross Correlation]'
+
+parameters:
+- id: polarization
+  label: Polarizations
+  dtype: enum
+  options: ['1', '2']
+  option_labels: ['Single', 'XY']
+- id: num_inputs
+  label: Num Antennas
+  dtype: int
+  default: '2'
+- id: integration
+  label: Integration N
+  dtype: int
+  default: '1'
+
+asserts:
+- ${ num_inputs > 1 }
+
+templates:
+  imports: import xcorrelate
+  make: xcorrelate.triangular_to_full(${polarization}, ${num_inputs}, ${integration})
+
+inputs:
+- id: triang
+  domain: message
+
+outputs:
+- id: full
+  domain: message
+  optional: true
+  
+documentation: "This block will fully expand the lower triangular correlator engine\
+    \ output matrix into a full n x n matrix (See the xengine block for format details)."
+
+#  'file_format' specifies the version of the GRC yml format used in the file
+#  and should usually not be changed.
+file_format: 1
