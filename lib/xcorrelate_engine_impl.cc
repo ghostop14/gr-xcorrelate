@@ -701,10 +701,10 @@ xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int
  * The private constructor
  */
 xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads)
-: gr::block("xcorrelate_engine",
+: gr::sync_block("xcorrelate_engine",
 		gr::io_signature::make(2, num_inputs, num_channels*sizeof(gr_complex)),
 		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_output_format(output_format),
-		d_num_channels(num_channels), d_integration_time(integration)
+		d_num_channels(num_channels), d_integration_time(integration), integration_tracker(0)
 {
 	// See "Accelerating Radio Astronomy Cross-Correlation with Graphics Processing Units" by M. A. Clark
 	// and xGPU on github for reference documentation and reference implementation.
@@ -715,19 +715,28 @@ xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs,
 	input_size = d_num_channels * sizeof(gr_complex);
 
 	num_chan_x2 = d_num_channels * 2;
+	frame_size = d_num_channels * d_num_inputs * d_npol;
 
-	complex_input = new gr_complex[d_num_inputs * d_num_channels * d_npol*d_integration_time];
+	// 2 buffers will allow us to process one in a worker thread while the other
+	// is being loaded.
+	complex_input1 = new gr_complex[frame_size * d_integration_time];
+	complex_input2 = new gr_complex[frame_size * d_integration_time];
+	complex_input = complex_input1;
+	thread_complex_input = complex_input;
 
 	if (output_format == XCORR_TRIANGULAR_ORDER) {
 		// This is only the lower triangular matrix size (including the autocorrelation diagonal
 		matrix_flat_length = d_num_channels * d_num_baselines * d_npol * d_npol;
-		output_matrix = new gr_complex[matrix_flat_length];
 	}
 	else {
 		// This is the full matrix
 		matrix_flat_length = d_num_channels * (d_num_inputs*d_num_inputs*d_npol*d_npol);
-		output_matrix = new gr_complex[matrix_flat_length];
 	}
+
+	output_matrix1 = new gr_complex[matrix_flat_length];
+	output_matrix2 = new gr_complex[matrix_flat_length];
+	output_matrix = output_matrix1;
+	thread_output_matrix = output_matrix;
 
 	output_size = matrix_flat_length * sizeof(gr_complex);
 
@@ -741,22 +750,44 @@ xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs,
 	}
 	std::cout << "Using OpenMP with " << num_procs << " processes." << std::endl;
 #else
+	num_procs = 1;
 	std::cout << "Using standard CPU thread for processing (install libomp to increase throughput)" << std::endl;
 #endif
 
 	message_port_register_out(pmt::mp("xcorr"));
+
+	proc_thread = new boost::thread(boost::bind(&xcorrelate_engine_impl::runThread, this));
 }
 
 bool xcorrelate_engine_impl::stop() {
+	if (proc_thread) {
+		stop_thread = true;
 
-	if (complex_input) {
-		delete[] complex_input;
-		complex_input = NULL;
+		while (threadRunning)
+			usleep(10);
+
+		delete proc_thread;
+		proc_thread = NULL;
 	}
 
-	if (output_matrix) {
-		delete[] output_matrix;
-		output_matrix = NULL;
+	if (complex_input1) {
+		delete[] complex_input1;
+		complex_input1 = NULL;
+	}
+
+	if (complex_input2) {
+		delete[] complex_input2;
+		complex_input2 = NULL;
+	}
+
+	if (output_matrix1) {
+		delete[] output_matrix1;
+		output_matrix1 = NULL;
+	}
+
+	if (output_matrix2) {
+		delete[] output_matrix2;
+		output_matrix2 = NULL;
 	}
 
 	return true;
@@ -770,55 +801,8 @@ xcorrelate_engine_impl::~xcorrelate_engine_impl()
 	bool ret_val = stop();
 }
 
-/*
- * This version's not correct.  But keeping for reference.
- *
 void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
-	// This is adapted directly from xGPU's omp_xengine.c
-	int i, t;
-	int NTIME=1; // placeholder for integration time
-
-	// Reset the output
-	memset(output_matrix,0x00,output_size);
-
-	XComplex inputRowX, inputRowY, inputColX, inputColY;
-	for (int i=0;i<d_num_baselines;i++) {
-		// Calculate each station from the global index
-		// See apps/test_indices.py for printing the station pairs as calculated.
-		// This approach calculates the [row,col] pairs for a lower triangular matrix including the diagonal pair.
-		int f = i/d_num_baselines;
-		int k = i - f*d_num_baselines;
-		int station1 = -0.5 + sqrt(0.25 + 2*k);
-		int station2 = k - ((station1+1)*station1)/2;
-
-		for (int chan=0;chan<d_num_channels;chan++) {
-			// inputRowX = input_matrix[station1*d_num_channels*d_npol+chan*d_npol];
-			// inputColX = input_matrix[station2*d_num_channels*d_npol+chan*d_npol];
-			inputRowX = input_matrix[(station1*d_num_channels+chan)*d_npol];
-			inputColX = input_matrix[(station2*d_num_channels+chan)*d_npol];
-
-			if (d_npol == 1) {
-				// cxmac = Complex Multiply and Accumulate
-				cxmac(cross_correlation[i],inputRowX, inputColX);
-			}
-			else {
-				// inputRowY = input_matrix[station1*d_num_channels*d_npol + chan*d_npol + 1];
-				// inputColY = input_matrix[station2*d_num_channels*d_npol + chan*d_npol + 1];
-				inputRowY = input_matrix[(station1*d_num_channels+chan)*d_npol + 1];
-				inputColY = input_matrix[(station2*d_num_channels+chan)*d_npol + 1];
-
-				cxmac(cross_correlation[4*i    ], inputRowX, inputColX);
-				cxmac(cross_correlation[4*i + 1], inputRowX, inputColY);
-				cxmac(cross_correlation[4*i + 2], inputRowY, inputColX);
-				cxmac(cross_correlation[4*i + 3], inputRowY, inputColY);
-			}
-		}
-	}
-}
- */
-
-void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
-	// Reset the output
+	// Clear the output matrix
 	memset(output_matrix,0x00,output_size);
 
 	// This is adapted directly from xGPU's omp_xengine.c
@@ -877,8 +861,23 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 	// For dual polarization, we have to interleave them so it's
 	// x0r x0i y0r y0i.....
 
-	for (int cur_block=0;cur_block<noutput_items*d_integration_time;cur_block++) {
-		int input_start = d_num_channels*d_num_inputs*d_npol * cur_block;
+	int items_remaining = d_integration_time - integration_tracker;
+	int items_processed;
+
+	if (noutput_items > items_remaining) {
+		items_processed = items_remaining;
+	}
+	else {
+		items_processed = noutput_items;
+	}
+
+	// First we need to load the data into a matrix in the format expected by the correlator.
+	// For a single polarization it's easy, we can just chain them.
+	// For dual polarization, we have to interleave them so it's
+	// x0r x0i y0r y0i.....
+
+	for (int cur_block=0;cur_block<items_processed;cur_block++) {
+		int input_start = frame_size * (integration_tracker + cur_block);
 
 		if (d_npol == 1) {
 			for (int i=0;i<d_num_inputs;i++) {
@@ -903,43 +902,49 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 
 	}
 
-	xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
+	integration_tracker += items_processed;
+
+	if (integration_tracker == d_integration_time) {
+		xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
+
+		integration_tracker = 0;
+	}
 
 	// Tell runtime system how many output items we produced.
-	return noutput_items;
-}
-
-void
-xcorrelate_engine_impl::forecast (int noutput_items, gr_vector_int &ninput_items_required)
-{
-	/* <+forecast+> e.g. ninput_items_required[0] = noutput_items */
-	for (int i=0;i<d_num_inputs;i++) {
-		ninput_items_required[i] = noutput_items * d_integration_time;
-
-		if (d_npol > 1) {
-			ninput_items_required[i + d_num_inputs] = noutput_items * d_integration_time;
-		}
-	}
+	return items_processed;
 }
 
 int
-xcorrelate_engine_impl::general_work(int noutput_items,
-		gr_vector_int &ninput_items,
+xcorrelate_engine_impl::work(int noutput_items,
 		gr_vector_const_void_star &input_items,
 		gr_vector_void_star &output_items)
 {
 	gr::thread::scoped_lock guard(d_setlock);
+
+	int items_remaining = d_integration_time - integration_tracker;
+
+	int items_processed;
+
+	if (noutput_items > items_remaining) {
+		items_processed = items_remaining;
+	}
+	else {
+		items_processed = noutput_items;
+	}
 
 	// First we need to load the data into a matrix in the format expected by the correlator.
 	// For a single polarization it's easy, we can just chain them.
 	// For dual polarization, we have to interleave them so it's
 	// x0r x0i y0r y0i.....
 
-	for (int cur_block=0;cur_block<noutput_items;cur_block++) {
+	for (int cur_block=0;cur_block<items_processed;cur_block++) {
+		// For reference: 	frame_size = d_num_channels * d_num_inputs * d_npol;
+		int input_start = frame_size * (integration_tracker + cur_block);
+
 		if (d_npol == 1) {
 			for (int i=0;i<d_num_inputs;i++) {
 				const gr_complex *cur_signal = (const gr_complex *) input_items[i];
-				memcpy(&complex_input[i*d_num_channels],&cur_signal[cur_block*d_num_channels],input_size);
+				memcpy(&complex_input[input_start + i*d_num_channels],&cur_signal[cur_block*d_num_channels],d_num_channels*sizeof(gr_complex));
 			}
 		}
 		else {
@@ -948,23 +953,56 @@ xcorrelate_engine_impl::general_work(int noutput_items,
 				const gr_complex *pol1 = (const gr_complex *) input_items[i];
 				const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
 
-				for (int k=0;k<num_chan_x2;k+=2) {
-					complex_input[i*num_chan_x2+k] = pol1[cur_block*d_num_channels+k];
-					complex_input[i*num_chan_x2+k+1] = pol2[cur_block*d_num_channels+k];
+				// Each interleaved channel will now be num_channels*2 long
+				// X Y X Y X Y...
+				for (int k=0;k<num_chan_x2;k++) {
+					int k2 = 2*k;
+					complex_input[input_start + i*num_chan_x2+k2] = pol1[cur_block*d_num_channels+k];
+					complex_input[input_start + i*num_chan_x2+k2+1] = pol2[cur_block*d_num_channels+k];
 				}
 			}
 		}
 
+	}
+
+	integration_tracker += items_processed;
+
+	if (integration_tracker == d_integration_time) {
+		// Buffer is ready for processing.
+		if (!thread_process_data) {
+
+		}
 		xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
 
 		pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,output_matrix));
 
 		pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("triang_matrix"), corr_out);
 		message_port_pub(pmt::mp("xcorr"), pdu);
+
+		integration_tracker = 0;
 	}
 
 	// Tell runtime system how many output items we produced.
-	return noutput_items;
+	return items_processed;
+}
+
+void xcorrelate_engine_impl::runThread() {
+	threadRunning = true;
+
+	while (!stop_thread) {
+		if (thread_process_data) {
+			// This is really a one-time variable set to true on the first pass.
+			thread_is_processing = true;
+
+			xcorrelate((XComplex *)thread_complex_input, (XComplex *)thread_output_matrix);
+
+			// clear the trigger.  This will inform that data is ready.
+			thread_process_data = false;
+		}
+		usleep(10);
+	}
+
+	threadRunning = false;
 }
 
 } /* namespace xcorrelate */

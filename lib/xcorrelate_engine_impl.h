@@ -679,6 +679,7 @@
 #define INCLUDED_XCORRELATE_XCORRELATE_ENGINE_IMPL_H
 
 #include <xcorrelate/xcorrelate_engine.h>
+#include <boost/thread/thread.hpp>
 
 #define XCORR_TRIANGULAR_ORDER 1
 #define XCORR_FULL_MATRIX 2
@@ -695,44 +696,65 @@ typedef struct XComplexStruct XComplex;
 class xcorrelate_engine_impl : public xcorrelate_engine
 {
 protected:
+	// Tracking pointers
 	gr_complex *complex_input;
 	gr_complex *output_matrix;
+	gr_complex *thread_complex_input;
+	gr_complex *thread_output_matrix;
+
+	// Actual Memory
+	gr_complex *complex_input1;
+	gr_complex *output_matrix1;
+	gr_complex *complex_input2;
+	gr_complex *output_matrix2;
 	int d_npol;
 	int d_num_inputs;
 	int d_output_format;
 	int d_num_channels;
 	int d_num_baselines;
 	int d_integration_time;
+	int integration_tracker;
+	int frame_size;
 	int input_size;
 	int num_chan_x2;
 	size_t matrix_flat_length;
 	int output_size;
 	int num_procs;
 
+	// For async mode, threading:
+	boost::thread *proc_thread=NULL;
+	bool threadRunning=false;
+	bool stop_thread = false;
+	bool thread_is_processing=false;
+	bool thread_process_data=false;
+
 	void cxmac(XComplex& accum, XComplex& z0, XComplex& z1) {
 		accum.real += z0.real * z1.real + z0.imag * z1.imag;
 		accum.imag += z0.imag * z1.real - z0.real * z1.imag;
 	}
 
+	virtual void runThread();
+
 public:
 	xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads=0);
-	~xcorrelate_engine_impl();
+	virtual ~xcorrelate_engine_impl();
 
 	bool stop();
 
 	void xcorrelate(XComplex *input_matrix, XComplex *cross_correlation);
 
-    void forecast (int noutput_items, gr_vector_int &ninput_items_required);
+	// void forecast (int noutput_items, gr_vector_int &ninput_items_required);
 
 	int work_test(
 			int noutput_items,
 			gr_vector_const_void_star &input_items,
 			gr_vector_void_star &output_items
 	);
-    int general_work(int noutput_items,
-         gr_vector_int &ninput_items,
-         gr_vector_const_void_star &input_items,
-         gr_vector_void_star &output_items);
+	int work(
+			int noutput_items,
+			gr_vector_const_void_star &input_items,
+			gr_vector_void_star &output_items
+	);
 };
 
 } // namespace xcorrelate
