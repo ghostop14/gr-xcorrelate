@@ -45,6 +45,7 @@ int num_inputs = 16;
 bool single_polarization = false;
 int integration_time = 1024;
 int iterations = 4;
+int num_procs=0;
 
 class comma_numpunct : public std::numpunct<char>
 {
@@ -88,7 +89,7 @@ bool testXCorrelate() {
 		}
 
 		// The one specifies output triangular order rather than full matrix.
-		test = new gr::xcorrelate::xcorrelate_engine_impl(polarization, num_inputs, 1, num_channels, integration_time);
+		test = new gr::xcorrelate::xcorrelate_engine_impl(polarization, num_inputs, 1, num_channels, integration_time, num_procs);
 	}
 	catch (...) {
 		std::cout << "ERROR: error setting up environment." << std::endl;
@@ -158,8 +159,9 @@ bool testXCorrelate() {
 
 	std::cout << "Elapsed time: " << elapsed_seconds.count() << std::endl;
 	std::cout << "Timing Averaging Iterations: " << iterations << std::endl;
-	std::cout << "Average Run Time:   " << std::fixed << std::setw(11)
-    << std::setprecision(6) << elapsed_time << " s  (" << std::setprecision(2) << throughput << " complex samples/sec)" << std::endl << std::endl;
+	std::cout << "Average Run Time:   " << std::fixed << std::setw(11) << std::setprecision(6) << elapsed_time << " s" << std::endl <<
+				"Total throughput: " << std::setprecision(2) << throughput << " complex samples/sec" << std::endl <<
+				"Synchronized stream (" << num_inputs << " inputs) throughput: " << throughput / num_inputs << " complex samples/sec" << std::endl << std::endl;
 
 	// ----------------------------------------------------------------------
 	// Clean up
@@ -189,8 +191,10 @@ main (int argc, char **argv)
 		// 1 is the file name
 		if (strcmp(argv[1],"--help")==0) {
 			std::cout << std::endl;
-			std::cout << "Usage: [--single-polarization] [--num_inputs=#] [number of channels (default is 1024)]" << std::endl;
-			std::cout <<"--num_inputs=n  Number of stations.  Default is 4." << std::endl;
+			std::cout << "Usage: [--single-polarization] [--num_inputs=#] [--integration-time=#] [--omp_threads=n] [number of channels (default is " << num_channels << ")]" << std::endl;
+			std::cout <<"--num_inputs=n  Number of stations.  Default is " << num_inputs  << "." << std::endl;
+			std::cout <<"--integration-time=n  Default is " << integration_time << "." << std::endl;
+			std::cout <<"--omp_threads=n  Default is max available." << std::endl;
 			std::cout <<"--single-polarization If not specified, correlation will assume X and Y polarizations per input." << std::endl;
 			std::cout << std::endl;
 			exit(0);
@@ -202,6 +206,14 @@ main (int argc, char **argv)
 			if (param.find("--num_inputs") != std::string::npos) {
 				boost::replace_all(param,"--num_inputs=","");
 				num_inputs=atoi(param.c_str());
+			}
+			else if (param.find("--integration-time") != std::string::npos) {
+				boost::replace_all(param,"--integration-time=","");
+				integration_time=atoi(param.c_str());
+			}
+			else if (param.find("--omp_threads") != std::string::npos) {
+				boost::replace_all(param,"--omp_threads=","");
+				num_procs=atoi(param.c_str());
 			}
 			else if (strcmp(argv[i],"--single-polarization")==0) {
 				single_polarization=true;

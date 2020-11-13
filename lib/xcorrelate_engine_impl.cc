@@ -690,17 +690,17 @@ namespace gr {
 namespace xcorrelate {
 
 xcorrelate_engine::sptr
-xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int num_channels, int integration)
+xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads)
 {
 	return gnuradio::get_initial_sptr
-			(new xcorrelate_engine_impl(polarization, num_inputs, output_format, num_channels,integration));
+			(new xcorrelate_engine_impl(polarization, num_inputs, output_format, num_channels,integration, omp_threads));
 }
 
 
 /*
  * The private constructor
  */
-xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration)
+xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads)
 : gr::block("xcorrelate_engine",
 		gr::io_signature::make(2, num_inputs, num_channels*sizeof(gr_complex)),
 		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_output_format(output_format),
@@ -733,6 +733,12 @@ xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs,
 
 #ifdef _OPENMP
 	num_procs = omp_get_num_procs();
+
+	// Allow the user to specify fewer threads to not starve the CPU for other tasks.
+	if (omp_threads > 0) {
+		if (omp_threads < num_procs)
+			num_procs = omp_threads;
+	}
 	std::cout << "Using OpenMP with " << num_procs << " processes." << std::endl;
 #else
 	std::cout << "Using standard CPU thread for processing (install libomp to increase throughput)" << std::endl;

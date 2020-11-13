@@ -715,7 +715,7 @@ protected:
 	}
 
 public:
-	xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration);
+	xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads=0);
 	~xcorrelate_engine_impl();
 
 	bool stop();

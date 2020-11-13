@@ -703,7 +703,7 @@ namespace gr {
        * class. xcorrelate::xcorrelate_engine::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int polarization, int num_inputs, int output_format, int num_channels, int integration);
+      static sptr make(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads=0);
     };
 
   } // namespace xcorrelate

@@ -1878,17 +1878,19 @@ blocks:
     bus_structure: null
     coordinate: [1208, 500.0]
     rotation: 0
-    state: true
+    state: enabled
 - name: xcorrelate_xcorrelate_engine_0
   id: xcorrelate_xcorrelate_engine
   parameters:
     affinity: ''
     alias: ''
     comment: ''
+    integration: '5'
     maxoutbuf: '0'
     minoutbuf: '0'
     num_channels: '1024'
     num_inputs: '4'
+    omp_threads: '0'
     polarization: '1'
   states:
     bus_sink: false
