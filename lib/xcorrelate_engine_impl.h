@@ -701,6 +701,7 @@ protected:
 	gr_complex *output_matrix;
 	gr_complex *thread_complex_input;
 	gr_complex *thread_output_matrix;
+	int current_write_buffer;
 
 	// Actual Memory
 	gr_complex *complex_input1;

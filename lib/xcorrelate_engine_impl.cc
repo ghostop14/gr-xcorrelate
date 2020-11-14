@@ -723,6 +723,7 @@ xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs,
 	complex_input2 = new gr_complex[frame_size * d_integration_time];
 	complex_input = complex_input1;
 	thread_complex_input = complex_input;
+	current_write_buffer = 1;
 
 	if (output_format == XCORR_TRIANGULAR_ORDER) {
 		// This is only the lower triangular matrix size (including the autocorrelation diagonal
@@ -932,6 +933,14 @@ xcorrelate_engine_impl::work(int noutput_items,
 		items_processed = noutput_items;
 	}
 
+	if (thread_process_data && ((integration_tracker+items_processed) == d_integration_time)) {
+		// If a thread is already processing data and this would trigger a new one,
+		// the buffer has backed up.  Let's hold and tell the engine we're not ready for this data.
+		usleep(10);
+
+		return 0;
+	}
+
 	// First we need to load the data into a matrix in the format expected by the correlator.
 	// For a single polarization it's easy, we can just chain them.
 	// For dual polarization, we have to interleave them so it's
@@ -970,14 +979,38 @@ xcorrelate_engine_impl::work(int noutput_items,
 	if (integration_tracker == d_integration_time) {
 		// Buffer is ready for processing.
 		if (!thread_process_data) {
+			// thread_is_processing will only be FALSE if thread_process_data == false on the first pass,
+			// in which case we don't want to send any pmt's.  Otherwise, we're in async pickup mode.
+			if (thread_is_processing) {
+				// So this case is that we have a new block ready and the old one is complete.
+				// So before transitioning to the new one, let's send the data from the last one.
+				pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,thread_output_matrix));
 
+				pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("triang_matrix"), corr_out);
+				message_port_pub(pmt::mp("xcorr"), pdu);
+			}
+
+			// Set up the pointers to the new data the thread should work with.
+			thread_complex_input = complex_input;
+			thread_output_matrix = output_matrix;
+
+			// Move the current pointer to the other buffer
+			if (current_write_buffer == 1) {
+				// Move to buffer 2
+				complex_input = complex_input2;
+				output_matrix = output_matrix2;
+				current_write_buffer = 2;
+			}
+			else {
+				// Move to buffer 1
+				complex_input = complex_input1;
+				output_matrix = output_matrix1;
+				current_write_buffer = 1;
+			}
+
+			// Trigger the thread to process
+			thread_process_data = true;
 		}
-		xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
-
-		pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,output_matrix));
-
-		pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("triang_matrix"), corr_out);
-		message_port_pub(pmt::mp("xcorr"), pdu);
 
 		integration_tracker = 0;
 	}
