@@ -36,6 +36,27 @@
 #include <chrono>
 #include <ctime>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+// win32 (mingw/msvc) specific
+#ifdef HAVE_IO_H
+#include <io.h>
+#endif
+#ifdef O_BINARY
+#define	OUR_O_BINARY O_BINARY
+#else
+#define	OUR_O_BINARY 0
+#endif
+
+// should be handled via configure
+#ifdef O_LARGEFILE
+#define	OUR_O_LARGEFILE	O_LARGEFILE
+#else
+#define	OUR_O_LARGEFILE 0
+#endif
+
+
 #include "xcorrelate_engine_impl.h"
 
 bool verbose=false;
@@ -46,6 +67,8 @@ bool single_polarization = false;
 int integration_time = 1024;
 int iterations = 4;
 int num_procs=0;
+
+using namespace gr::xcorrelate;
 
 class comma_numpunct : public std::numpunct<char>
 {
@@ -60,6 +83,89 @@ class comma_numpunct : public std::numpunct<char>
         return "\03";
     }
 };
+
+int bufferToFile(const char *filename, gr_complex *buffer, long long unsigned int length) {
+	FILE *d_fp = NULL;
+	int fd;
+	int flags;
+	flags = O_WRONLY|O_CREAT|O_TRUNC|OUR_O_LARGEFILE|OUR_O_BINARY;
+	if((fd = open(filename, flags, 0664)) < 0){
+		return 1;
+	}
+
+	if((d_fp = fdopen (fd, "wb")) == NULL) {
+		fclose(d_fp);        // don't leak file descriptor if fdopen fails.
+		return 1;
+	}
+
+	// Write the data
+    char *inbuf = (char*)buffer;
+    int nwritten = 0;
+    int d_itemsize = sizeof(gr_complex);
+
+    while(nwritten < length) {
+    	// fwrite: returns number of elements written
+    	// Takes: ptr to array of elements, element size, count, file stream pointer
+      long count = fwrite(inbuf, d_itemsize, length - nwritten, d_fp);
+      if(count == 0) {
+    	  // Error condition, nothing written for some reason.
+        if(ferror(d_fp)) {
+          printf("file write error.\n");
+          break;
+        }
+        else { // is EOF?  Probably will never get to this break;
+          break;
+        }
+      }
+      nwritten += count;
+      inbuf += count * d_itemsize;
+    }
+
+	// Clean up
+	fclose(d_fp);
+	return 0;
+}
+
+int bufferFromFile(const char *filename, gr_complex *buffer, long long unsigned int length) {
+	FILE *d_fp = NULL;
+	FILE *d_new_fp;
+
+	int fd;
+    if((fd = open(filename, O_RDONLY | OUR_O_LARGEFILE | OUR_O_BINARY)) < 0) {
+		return 1;
+	}
+
+	if((d_fp = fdopen (fd, "rb")) == NULL) {
+		fclose(d_fp);        // don't leak file descriptor if fdopen fails.
+		return 1;
+	}
+
+	// Read the data
+    char *inbuf = (char*)buffer;
+    int nread = 0;
+    int d_itemsize = sizeof(gr_complex);
+
+    while (nread < length) {
+        int itemsRead = fread(&buffer[nread], d_itemsize, length-nread, (FILE*)d_fp);
+
+        if (itemsRead == 0) {
+        	break;
+        }
+
+        nread += itemsRead;
+    }
+
+    if (nread !=length) {
+    	std::cout << "ERROR: Full buffer not read. " << nread << " read, but " << length << " requested." << std::endl;
+    }
+
+	// Clean up
+    if(d_fp != NULL) {
+      fclose(d_fp);
+    }
+
+	return 0;
+}
 
 bool testXCorrelate() {
 	std::cout << "----------------------------------------------------------" << std::endl;
@@ -142,12 +248,12 @@ bool testXCorrelate() {
 
 	// Get a test run out of the way.
 	// Note: output items is 1 since it's expecting vectors in.
-	noutputitems = test->work_test(1,inputPointers,outputPointers);
+	noutputitems = test->work_test(integration_time,inputPointers,outputPointers);
 
 	start = std::chrono::steady_clock::now();
 	// make iterations calls to get average.
 	for (i=0;i<iterations;i++) {
-		noutputitems = test->work_test(1,inputPointers,outputPointers);
+		noutputitems = test->work_test(integration_time,inputPointers,outputPointers);
 	}
 	end = std::chrono::steady_clock::now();
 
@@ -155,25 +261,75 @@ bool testXCorrelate() {
 
 	float elapsed_time,throughput;
 	elapsed_time = elapsed_seconds.count()/(float)iterations;
-	throughput = num_channels*integration_time / elapsed_time;
+	throughput = num_inputs * polarization * num_channels * integration_time / elapsed_time;
+	long input_buffer_total_bytes = test->get_input_buffer_size() * sizeof(gr_complex);
+	float bits_throughput = 8 * input_buffer_total_bytes / elapsed_time;
 
 	std::cout << "Elapsed time: " << elapsed_seconds.count() << std::endl;
 	std::cout << "Timing Averaging Iterations: " << iterations << std::endl;
 	std::cout << "Average Run Time:   " << std::fixed << std::setw(11) << std::setprecision(6) << elapsed_time << " s" << std::endl <<
 				"Total throughput: " << std::setprecision(2) << throughput << " complex samples/sec" << std::endl <<
-				"Synchronized stream (" << num_inputs << " inputs) throughput: " << throughput / num_inputs << " complex samples/sec" << std::endl << std::endl;
+				"Synchronized stream (" << num_inputs << " inputs) throughput: " << throughput / num_inputs << " complex samples/sec" << std::endl <<
+				"Input processing rate (comparable to xGPU's throughput number): " << bits_throughput << " bps" << std::endl;
 
-	// ----------------------------------------------------------------------
-	// Clean up
+	// Reset test
 	if (test != NULL) {
 		delete test;
 	}
+
+// #define TEST_GOLDEN_DATA
+
+#ifdef TEST_GOLDEN_DATA
+	// ------------------------  Test Golden Data -------------------------
+	test = new gr::xcorrelate::xcorrelate_engine_impl(2, 16, 1, 1024, 1024, 0);
+
+	long input_length = test->get_input_buffer_size();
+	long output_length = test->get_output_buffer_size();
+
+	gr_complex *input_buffer;
+	gr_complex *output_buffer;
+
+	input_buffer = new gr_complex[input_length];
+	output_buffer = new gr_complex[output_length];
+
+	std::string input_file = "/opt/tmp/ata/xgpu_input_data.bin";
+	std::string output_file = "/opt/tmp/ata/xengine_output_data.bin";
+
+	std::cout << "Testing golden data..." << std::endl;
+	std::cout << "Reading data from input file " << input_file << "..." << std::endl;
+
+	int result = bufferFromFile(input_file.c_str(), input_buffer, input_length);
+
+	if (result != 0) {
+		std::cout << "Error reading input file." << std::endl;
+	}
+	else {
+		test->xcorrelate((XComplex *)input_buffer, (XComplex *)output_buffer);
+		std::cout << "Writing results to output file " << output_file << "..." << std::endl;
+		result = bufferToFile(output_file.c_str(), output_buffer, output_length);
+
+		if (result != 0) {
+			std::cout << "Error writing to output file." << std::endl;
+		}
+	}
+
+	delete[] input_buffer;
+	delete[] output_buffer;
+
+	if (test != NULL) {
+		delete test;
+	}
+#endif
+
+	// ----------------------------------------------------------------------
+	// Clean up io buffers
 
 	inputPointers.clear();
 	outputPointers.clear();
 	inputItems_complex.clear();
 	outputItems.clear();
 	ninitems.clear();
+
 
 	return true;
 }

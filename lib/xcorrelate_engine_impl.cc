@@ -906,8 +906,8 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 	integration_tracker += items_processed;
 
 	if (integration_tracker == d_integration_time) {
+		// std::cout << "Processing data" << std::endl;
 		xcorrelate((XComplex *)complex_input, (XComplex *)output_matrix);
-
 		integration_tracker = 0;
 	}
 

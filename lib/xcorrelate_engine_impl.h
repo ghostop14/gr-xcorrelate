@@ -742,6 +742,9 @@ public:
 
 	bool stop();
 
+	long get_input_buffer_size() { return d_num_inputs * d_num_channels * d_npol * d_integration_time; };
+	long get_output_buffer_size() { return matrix_flat_length; };
+
 	void xcorrelate(XComplex *input_matrix, XComplex *cross_correlation);
 
 	// void forecast (int noutput_items, gr_vector_int &ninput_items_required);
