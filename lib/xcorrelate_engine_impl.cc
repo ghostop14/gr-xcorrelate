@@ -936,7 +936,7 @@ xcorrelate_engine_impl::work(int noutput_items,
 	if (thread_process_data && ((integration_tracker+items_processed) == d_integration_time)) {
 		// If a thread is already processing data and this would trigger a new one,
 		// the buffer has backed up.  Let's hold and tell the engine we're not ready for this data.
-		usleep(10);
+		usleep(100);
 
 		return 0;
 	}

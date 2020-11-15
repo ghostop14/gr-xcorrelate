@@ -41,6 +41,7 @@ inputs:
   vlen: ${num_channels}
   multiplicity: ${ (0 if polarization == '1' else num_inputs) }
   optional: ${ (True if polarization == '1' else False) }
+  hide: ${ (True if polarization == '1' else False) }
 
 outputs:
 - label: xcorr
