@@ -74,6 +74,8 @@ target_link_libraries(
   gnuradio-xcorrelate
 )
 
+install(TARGETS test-xcorrelator DESTINATION "${CMAKE_INSTALL_PREFIX}/bin" RUNTIME)
+
 ########################################################################
 # Build and register test-xengine
 ########################################################################
