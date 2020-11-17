@@ -878,6 +878,7 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 	// x0r x0i y0r y0i.....
 
 	for (int cur_block=0;cur_block<items_processed;cur_block++) {
+		// For reference: 	frame_size = d_num_channels * d_num_inputs * d_npol;
 		int input_start = frame_size * (integration_tracker + cur_block);
 
 		if (d_npol == 1) {
@@ -894,14 +895,14 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 
 				// Each interleaved channel will now be num_channels*2 long
 				// X Y X Y X Y...
-				for (int k=0;k<num_chan_x2;k+=2) {
-					complex_input[input_start + i*num_chan_x2+k] = pol1[cur_block*d_num_channels+k/2];
-					complex_input[input_start + i*num_chan_x2+k+1] = pol2[cur_block*d_num_channels+k/2];
+				for (int k=0;k<d_num_channels;k++) {
+					int k2 = 2*k;
+					complex_input[input_start + i*num_chan_x2+k2] = pol1[cur_block*d_num_channels+k];
+					complex_input[input_start + i*num_chan_x2+k2+1] = pol2[cur_block*d_num_channels+k];
 				}
 			}
-		}
-
-	}
+		} // else interleave
+	} // for curblock
 
 	integration_tracker += items_processed;
 
@@ -964,15 +965,14 @@ xcorrelate_engine_impl::work(int noutput_items,
 
 				// Each interleaved channel will now be num_channels*2 long
 				// X Y X Y X Y...
-				for (int k=0;k<num_chan_x2;k++) {
+				for (int k=0;k<d_num_channels;k++) {
 					int k2 = 2*k;
 					complex_input[input_start + i*num_chan_x2+k2] = pol1[cur_block*d_num_channels+k];
 					complex_input[input_start + i*num_chan_x2+k2+1] = pol2[cur_block*d_num_channels+k];
 				}
 			}
-		}
-
-	}
+		} // else interleave
+	} // for curblock
 
 	integration_tracker += items_processed;
 
