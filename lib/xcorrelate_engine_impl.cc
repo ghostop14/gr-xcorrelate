@@ -702,7 +702,7 @@ xcorrelate_engine::make(int polarization, int num_inputs, int output_format, int
  */
 xcorrelate_engine_impl::xcorrelate_engine_impl(int polarization, int num_inputs, int output_format, int num_channels, int integration, int omp_threads)
 : gr::sync_block("xcorrelate_engine",
-		gr::io_signature::make(2, num_inputs, num_channels*sizeof(gr_complex)),
+		gr::io_signature::make(2, num_inputs*polarization, num_channels*sizeof(gr_complex)),
 		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_output_format(output_format),
 		d_num_channels(num_channels), d_integration_time(integration), integration_tracker(0)
 {
