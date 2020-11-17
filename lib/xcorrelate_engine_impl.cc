@@ -803,9 +803,6 @@ xcorrelate_engine_impl::~xcorrelate_engine_impl()
 }
 
 void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_correlation) {
-	// Clear the output matrix
-	memset(output_matrix,0x00,output_size);
-
 	// This is adapted directly from xGPU's omp_xengine.c
 #pragma omp parallel num_threads(num_procs)
 	{
@@ -888,19 +885,28 @@ xcorrelate_engine_impl::work_test(int noutput_items,
 			}
 		}
 		else {
-			// We need to interleave....
-			for (int i=0;i<d_num_inputs;i++) {
-				const gr_complex *pol1 = (const gr_complex *) input_items[i];
-				const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
+#pragma omp parallel num_threads(num_procs)
+				{
+					int i;
+#pragma omp for schedule(dynamic)
+					for (i=0;i<d_num_inputs;i++) {
+						const gr_complex *pol1 = (const gr_complex *) input_items[i];
+						const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
 
-				// Each interleaved channel will now be num_channels*2 long
-				// X Y X Y X Y...
-				for (int k=0;k<d_num_channels;k++) {
-					int k2 = 2*k;
-					complex_input[input_start + i*num_chan_x2+k2] = pol1[cur_block*d_num_channels+k];
-					complex_input[input_start + i*num_chan_x2+k2+1] = pol2[cur_block*d_num_channels+k];
-				}
-			}
+						// Each interleaved channel will now be num_channels*2 long
+						// X Y X Y X Y...
+						for (int k=0;k<d_num_channels;k++) {
+							int input_index = input_start + i*num_chan_x2+k*2;
+							int pol_index = cur_block*d_num_channels+k;
+							// complex_input[input_index++] = pol1[pol_index];
+							// complex_input[input_index] = pol2[pol_index];
+							// The memcpy is slightly faster.
+							// sizeof(gr_complex) is faster than d_data_size
+							memcpy(&complex_input[input_index++],&pol1[pol_index],sizeof(gr_complex));
+							memcpy(&complex_input[input_index],&pol2[pol_index],sizeof(gr_complex));
+						}
+					} // for i
+				} // omp
 		} // else interleave
 	} // for curblock
 
@@ -958,19 +964,28 @@ xcorrelate_engine_impl::work(int noutput_items,
 			}
 		}
 		else {
-			// We need to interleave....
-			for (int i=0;i<d_num_inputs;i++) {
-				const gr_complex *pol1 = (const gr_complex *) input_items[i];
-				const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
+#pragma omp parallel num_threads(num_procs)
+				{
+					int i;
+#pragma omp for schedule(dynamic)
+					for (i=0;i<d_num_inputs;i++) {
+						const gr_complex *pol1 = (const gr_complex *) input_items[i];
+						const gr_complex *pol2 = (const gr_complex *) input_items[i+d_num_inputs];
 
-				// Each interleaved channel will now be num_channels*2 long
-				// X Y X Y X Y...
-				for (int k=0;k<d_num_channels;k++) {
-					int k2 = 2*k;
-					complex_input[input_start + i*num_chan_x2+k2] = pol1[cur_block*d_num_channels+k];
-					complex_input[input_start + i*num_chan_x2+k2+1] = pol2[cur_block*d_num_channels+k];
-				}
-			}
+						// Each interleaved channel will now be num_channels*2 long
+						// X Y X Y X Y...
+						for (int k=0;k<d_num_channels;k++) {
+							int input_index = input_start + i*num_chan_x2+k*2;
+							int pol_index = cur_block*d_num_channels+k;
+							// complex_input[input_index++] = pol1[pol_index];
+							// complex_input[input_index] = pol2[pol_index];
+							// The memcpy is slightly faster.
+							// sizeof(gr_complex) is faster than d_data_size
+							memcpy(&complex_input[input_index++],&pol1[pol_index],sizeof(gr_complex));
+							memcpy(&complex_input[input_index],&pol2[pol_index],sizeof(gr_complex));
+						}
+					} // for i
+				} // omp
 		} // else interleave
 	} // for curblock
 
