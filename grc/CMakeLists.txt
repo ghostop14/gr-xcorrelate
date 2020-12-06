@@ -24,5 +24,6 @@ install(FILES
     xcorrelate_ExtractDelay.block.yml 
     xcorrelate_VectorMaxIndexToVar.block.yml
     xcorrelate_xcorrelate_engine.block.yml
-    xcorrelate_triangular_to_full.block.yml DESTINATION share/gnuradio/grc/blocks
+    xcorrelate_triangular_to_full.block.yml
+    xcorrelate_auto_polarization.block.yml DESTINATION share/gnuradio/grc/blocks
 )

@@ -1,0 +1,44 @@
+id: xcorrelate_auto_polarization
+label: Auto-Polarization
+category: '[Cross Correlation]'
+
+parameters:
+- id: fft_size
+  label: FFT Size
+  dtype: int
+  default: '1024'
+- id: fft_avg
+  label: FFT Averaging
+  dtype: int
+  default: '23'
+- id: iir_weight
+  label: IIR Weight
+  dtype: float
+  default: '0.1'
+
+asserts:
+- ${ fft_avg > 0 }
+
+templates:
+  imports: import xcorrelate
+  make: xcorrelate.auto_polarization(${fft_size}, ${fft_avg}, ${iir_weight})
+
+inputs:
+-   label: x_in
+    domain: stream
+    dtype: complex
+-   label: y_in
+    domain: stream
+    dtype: complex
+
+outputs:
+-   label: sig_pol
+    domain: stream
+    dtype: complex
+-   label: orth_pol
+    domain: stream
+    dtype: complex
+
+#  'file_format' specifies the version of the GRC yml format used in the file
+#  and should usually not be changed.
+file_format: 1

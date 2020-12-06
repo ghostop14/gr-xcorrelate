@@ -26,5 +26,6 @@ install(FILES
     xcorrelate.h
     xcorrelate_fft_vcf2.h
     xcorrelate_engine.h
-    triangular_to_full.h DESTINATION include/xcorrelate
+    triangular_to_full.h
+    auto_polarization.h DESTINATION include/xcorrelate
 )

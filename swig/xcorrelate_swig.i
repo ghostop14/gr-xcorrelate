@@ -12,6 +12,7 @@
 #include "xcorrelate/xcorrelate_fft_vcf2.h"
 #include "xcorrelate/xcorrelate_engine.h"
 #include "xcorrelate/triangular_to_full.h"
+#include "xcorrelate/auto_polarization.h"
 %}
 
 %include "xcorrelate/xcorrelate.h"
@@ -22,3 +23,5 @@ GR_SWIG_BLOCK_MAGIC2(xcorrelate, xcorrelate_fft_vcf2);
 GR_SWIG_BLOCK_MAGIC2(xcorrelate, xcorrelate_engine);
 %include "xcorrelate/triangular_to_full.h"
 GR_SWIG_BLOCK_MAGIC2(xcorrelate, triangular_to_full);
+%include "xcorrelate/auto_polarization.h"
+GR_SWIG_BLOCK_MAGIC2(xcorrelate, auto_polarization);
