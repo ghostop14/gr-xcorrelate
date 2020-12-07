@@ -14,7 +14,7 @@ parameters:
 - id: iir_weight
   label: IIR Weight
   dtype: float
-  default: '0.1'
+  default: '1e-4'
 
 asserts:
 - ${ fft_avg > 0 }

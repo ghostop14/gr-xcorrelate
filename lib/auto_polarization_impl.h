@@ -690,9 +690,9 @@ private:
 	int d_fft_size;
 	int d_fft_avg;
 	float d_iir_weight;
-	float d_noise_ampl[2];
-	float d_sig_ampl[2];
-	float d_phase;
+	double d_noise_ampl[2];
+	double d_sig_ampl[2];
+	double d_phase;
 
 	gr::fft::fft_complex *d_fft0=NULL;
 	gr::fft::fft_complex *d_fft1=NULL;
@@ -701,13 +701,15 @@ private:
 	gr_complex *tmpbuf1;
 	float *fx_mag_sq0;
 	float *fx_mag_sq1;
-	float *fx_sq_avg0;
-	float *fx_sq_avg1;
+	double *fx_sq_avg0;
+	double *fx_sq_avg1;
 	float *fx_sq_avg_ch_max;
 	gr_complex *f_cross;
 	gr_complex onej;
 	float sqrt_fft_size;
-	int fft_size_time_avg;
+	int fft_size_over_2;
+	long fft_size_time_avg;
+	float d_fft_avg_as_float;
 
 	float median(std::vector<float> &v);
 

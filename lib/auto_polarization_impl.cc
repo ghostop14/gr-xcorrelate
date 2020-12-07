@@ -714,32 +714,35 @@ auto_polarization_impl::auto_polarization_impl(int fft_size, int fft_avg, float 
 	d_noise_ampl[0] = d_noise_ampl[1] = 1.0;
 	d_sig_ampl[0] = d_sig_ampl[1] = 1.0;
 	d_phase = 0.0;
+	d_fft_avg_as_float = (float)d_fft_avg;
 
 	// Create FFTs
 	d_fft0 = new gr::fft::fft_complex(d_fft_size);
 	d_fft1 = new gr::fft::fft_complex(d_fft_size);
 
+	// Calculate some values once.
+	sqrt_fft_size = sqrt((float)d_fft_size);
+	fft_size_over_2 = d_fft_size / 2;
+	fft_size_time_avg = d_fft_size * d_fft_avg;
+
 	// Create intermediate buffers
 	size_t mem_alignment = volk_get_alignment();
-	tmpbuf0 = (gr_complex *)volk_malloc(sizeof(gr_complex)*d_fft_avg*d_fft_size, mem_alignment);
-	tmpbuf1 = (gr_complex *)volk_malloc(sizeof(gr_complex)*d_fft_avg*d_fft_size, mem_alignment);
+	tmpbuf0 = (gr_complex *)volk_malloc(sizeof(gr_complex)*fft_size_time_avg, mem_alignment);
+	tmpbuf1 = (gr_complex *)volk_malloc(sizeof(gr_complex)*fft_size_time_avg, mem_alignment);
 
-	fx_mag_sq0 = (float *)volk_malloc(sizeof(float)*d_fft_avg*d_fft_size, mem_alignment);
+	fx_mag_sq0 = (float *)volk_malloc(sizeof(float)*fft_size_time_avg, mem_alignment);
 	fx_mag_sq1 = (float *)volk_malloc(sizeof(float)*d_fft_avg*d_fft_size, mem_alignment);
 
-	fx_sq_avg0 = (float *)volk_malloc(sizeof(float)*d_fft_size, mem_alignment);
-	fx_sq_avg1 = (float *)volk_malloc(sizeof(float)*d_fft_size, mem_alignment);
+	fx_sq_avg0 = (double *)volk_malloc(sizeof(double)*d_fft_size, mem_alignment);
+	fx_sq_avg1 = (double *)volk_malloc(sizeof(double)*d_fft_size, mem_alignment);
 
 	fx_sq_avg_ch_max = (float *)volk_malloc(sizeof(float)*d_fft_size, mem_alignment);
 	f_cross = (gr_complex *)volk_malloc(sizeof(gr_complex)*d_fft_size, mem_alignment);
 
 	onej = gr_complex(0.0,1.0);
-	sqrt_fft_size = sqrt(d_fft_size);
-
-	fft_size_time_avg = d_fft_size * d_fft_avg;
 
 	// Set output multiple of fft_size * avg
-	set_output_multiple(d_fft_avg * d_fft_size);
+	set_output_multiple(fft_size_time_avg);
 }
 
 /*
@@ -764,6 +767,9 @@ auto_polarization_impl::~auto_polarization_impl()
 
 float auto_polarization_impl::median(std::vector<float> &v)
 {
+	// This approach with nth_element is faster than a full sort.
+	// It does sort the array, but once it's sorted through n
+	// it doesn't finish sorting the pieces it doesn't need.
 	size_t n = v.size() / 2;
 	std::nth_element(v.begin(), v.begin()+n, v.end());
 
@@ -775,9 +781,24 @@ float auto_polarization_impl::median(std::vector<float> &v)
 	}
 	else {
 		// Even number of entries.  Median is the average of the middle two.
-		std::nth_element(v.begin(), v.begin()+n-1, v.end());
+		// std::nth_element(v.begin(), v.begin()+n-1, v.end());
 		return 0.5*(vn+v[n-1]);
 	}
+
+	/*
+	size_t n = v.size() / 2;
+	std::sort (v.begin(), v.end());
+	float vn = v[n];
+
+	if(v.size()%2 == 1) {
+		// odd number of entries.  Median is the middle sorted element.
+		return vn;
+	}
+	else {
+		// Even number of entries.  Median is the average of the middle two.
+		return 0.5*(vn+v[n-1]);
+	}
+	 */
 }
 
 int
@@ -785,16 +806,18 @@ auto_polarization_impl::work(int noutput_items,
 		gr_vector_const_void_star &input_items,
 		gr_vector_void_star &output_items)
 {
+	// Since the FFT classes use an internal exclusive buffer, we need the lock
+	// to ensure it doesn't get overwritten with simultaneous calls.
+	gr::thread::scoped_lock guard(d_setlock);
+
 	const gr_complex *in0 = (const gr_complex *) input_items[0];
 	const gr_complex *in1 = (const gr_complex *) input_items[1];
 	gr_complex *out0 = (gr_complex *) output_items[0];
 	gr_complex *out1 = (gr_complex *) output_items[1];
 
-	float noise_ampl[2];
-	float noise_ampl_sq[2];
-	float sig_ampl[2];
-
-	gr::thread::scoped_lock guard(d_setlock);
+	double noise_ampl[2];
+	double noise_ampl_sq[2];
+	double sig_ampl[2];
 
 	// loop through blocks of d_fft_size * d_fft_avg in case
 	// the scheduler sends us multiples
@@ -807,7 +830,7 @@ auto_polarization_impl::work(int noutput_items,
 		gr_complex *cur_out1;
 
 		// Calc our stride and set up our pointers for this iteration
-		int block_start = cur_block * fft_size_time_avg;
+		long block_start = cur_block * fft_size_time_avg;
 
 		cur_in0 = &in0[block_start];
 		cur_in1 = &in1[block_start];
@@ -857,11 +880,10 @@ auto_polarization_impl::work(int noutput_items,
 				fx_sq_avg0[f] += fx_mag_sq0[d_fft_size*i+f];
 				fx_sq_avg1[f] += fx_mag_sq1[d_fft_size*i+f];
 			}
-		}
 
-		// Use volk to finish off the avg calc
-		volk_32f_s32f_multiply_32f(fx_sq_avg0,fx_sq_avg0,1.0f/d_fft_avg,d_fft_size);
-		volk_32f_s32f_multiply_32f(fx_sq_avg1,fx_sq_avg1,1.0f/d_fft_avg,d_fft_size);
+			fx_sq_avg0[f] /= d_fft_avg_as_float;
+			fx_sq_avg1[f] /= d_fft_avg_as_float;
+		}
 
 		// noise_ampl = np.sqrt(np.median(fx_sq_avg, axis = 2))
 		// Going to use a feature of std::vector to get the median value
@@ -871,16 +893,27 @@ auto_polarization_impl::work(int noutput_items,
 		// We're going to store median as noise_amp^2 since we'll need it below.
 		noise_ampl_sq[0] = median(avg0_vector);
 		noise_ampl_sq[1] = median(avg1_vector);
-		noise_ampl[0] = sqrt(noise_ampl_sq[0]);
-		noise_ampl[1] = sqrt(noise_ampl_sq[1]);
+
+		if (noise_ampl_sq[0] > 0.0) {
+			noise_ampl[0] = sqrt(noise_ampl_sq[0]);
+		}
+		else {
+			noise_ampl[0] = 1e-20;
+		}
+		if (noise_ampl_sq[1] > 0.0) {
+			noise_ampl[1] = sqrt(noise_ampl_sq[1]);
+		}
+		else {
+			noise_ampl[1] = 1e-20;
+		}
 
 		// fx_sq_avg_ch_max = np.max(fx_sq_avg/noise_ampl[...,np.newaxis]**2, axis = 0)
 		// Now find max between the two vectors and store it in fx_sq_avg_ch_max
 
 		#pragma omp parallel for num_threads(4)
 		for (int i=0;i<d_fft_size;i++) {
-			float f0 = fx_sq_avg0[i] / noise_ampl_sq[0];
-			float f1 = fx_sq_avg1[i] / noise_ampl_sq[1];
+			double f0 = fx_sq_avg0[i] / noise_ampl_sq[0];
+			double f1 = fx_sq_avg1[i] / noise_ampl_sq[1];
 			if (f0 > f1) {
 				fx_sq_avg_ch_max[i] = f0;
 			}
@@ -906,17 +939,27 @@ auto_polarization_impl::work(int noutput_items,
 			for (int i=0;i<d_fft_avg;i++) {
 				f_cross[f] += tmpbuf1[d_fft_size*i+f];
 			}
+
+			f_cross[f] /= d_fft_avg_as_float;
 		}
-		// Use volk to finish off the avg calc
-		// Treat the complex as 2 floats for the volk call just to do the avg division.
-		volk_32f_s32f_multiply_32f((float *)f_cross,(float *)f_cross,1.0f/d_fft_avg,d_fft_size*2);
 
 		// phase = np.angle(f_cross[np.arange(f_cross.shape[0]),peak_idx])
 		float phase = std::arg(f_cross[peak_idx]);
 
 		// sig_ampl = np.sqrt(fx_sq_avg[:,np.arange(fx_sq_avg.shape[1]),peak_idx] - noise_ampl)
-		sig_ampl[0] = sqrt(fx_sq_avg0[peak_idx] - noise_ampl[0]);
-		sig_ampl[1] = sqrt(fx_sq_avg1[peak_idx] - noise_ampl[1]);
+		double val0 = fx_sq_avg0[peak_idx] - noise_ampl[0];
+		double val1 = fx_sq_avg1[peak_idx] - noise_ampl[1];
+
+		// Just ensure we don't have negatives here or a divide-by-zero below.
+		if (val0 > 0.0)
+			sig_ampl[0] = sqrt(val0);
+		else
+			sig_ampl[0] = 1e-20;
+
+		if (val1 > 0.0)
+			sig_ampl[1] = sqrt(val1);
+		else
+			sig_ampl[1] = 1e-20;
 
 		/* Shouldn't need this with sqrt.  Won't return < 0.
 		// sig_ampl = np.clip(sig_ampl, 0, np.inf)
@@ -954,9 +997,9 @@ auto_polarization_impl::work(int noutput_items,
 		d_phase = fmod((phase + GR_M_PI),(2 * GR_M_PI)) - GR_M_PI;
 
 		// tau = sig_ampl[0]*noise_ampl[1]/(noise_ampl[0]*sig_ampl[1])
-		float tau = sig_ampl[0]*noise_ampl[1]/(noise_ampl[0]*sig_ampl[1]);
+		double tau = sig_ampl[0]*noise_ampl[1]/(noise_ampl[0]*sig_ampl[1]);
 		// tau = 20*np.log10(tau)/6*0.5 + 0.5
-		tau = 20*log10(tau)/6*0.5 + 0.5;
+		tau = 20.0 * log10(tau) / 6.0 * 0.5 + 0.5;
 		// tau = np.clip(tau, 0, 1)
 		if (tau < 0.0) {
 			tau = 0.0;
@@ -966,33 +1009,66 @@ auto_polarization_impl::work(int noutput_items,
 		}
 
 		//a_phase = (tau - 1) * phase
-		float a_phase = (tau - 1.0) * phase;
+		float a_phase = (float)((tau - 1.0) * phase);
 		//b_phase = tau * phase
-		float b_phase = tau * phase;
+		float b_phase = (float)(tau * phase);
 
 		// alpha = (np.exp(1j*a_phase) * sig_ampl[0] / noise_ampl[0])[:,np.newaxis]
-		gr_complex alpha = exp(onej * a_phase) * sig_ampl[0] / noise_ampl[0];
+		gr_complex alpha = exp(onej * a_phase) * (float)(sig_ampl[0] / noise_ampl[0]);
 		// beta = (np.exp(1j*b_phase) * sig_ampl[1] / noise_ampl[1])[:,np.newaxis]
-		gr_complex beta = exp(onej * b_phase) * sig_ampl[1] / noise_ampl[1];
+		gr_complex beta = exp(onej * b_phase) * (float)(sig_ampl[1] / noise_ampl[1]);
 
 		// y = x.reshape((x.shape[0], x.shape[1], self.fft_avg * self.fft_size))
 		// y = y / noise_ampl[...,np.newaxis] * np.sqrt(self.fft_size)
 		volk_32f_s32f_multiply_32f((float *)tmpbuf0,(float *)cur_in0,sqrt_fft_size / noise_ampl[0],fft_size_time_avg*2);
 		volk_32f_s32f_multiply_32f((float *)tmpbuf1,(float *)cur_in1,sqrt_fft_size / noise_ampl[1],fft_size_time_avg*2);
+		// These lines were just for testing.  Leaving them in case I need them again.
+		//volk_32f_s32f_multiply_32f((float *)tmpbuf0,(float *)cur_in0,sqrt_fft_size,fft_size_time_avg*2);
+		//volk_32f_s32f_multiply_32f((float *)tmpbuf1,(float *)cur_in1,sqrt_fft_size,fft_size_time_avg*2);
 
 		// output_items[0][:] = (alpha * y[0] + beta * y[1]).ravel()
 		// output_items[1][:] = (np.conjugate(beta) * y[0] - np.conjugate(alpha) * y[1]).ravel()
 		gr_complex conj_alpha = std::conj(alpha);
 		gr_complex conj_beta = std::conj(beta);
 
+#pragma omp parallel for num_threads(4)
 		for (int i = 0;i<fft_size_time_avg;i++) {
 			cur_out0[i] = alpha * tmpbuf0[i] + beta * tmpbuf1[i];
 			cur_out1[i] = conj_beta * tmpbuf0[i] - conj_alpha * tmpbuf1[i];
+			// These lines were just for testing.  Leaving them in case I need them again.
+			//cur_out0[i] = tmpbuf0[i] + tmpbuf1[i];
+			//cur_out1[i] = tmpbuf0[i] - tmpbuf1[i];
 		}
+
+		/*
+		static bool first_time = true;
+
+		if (first_time) {
+			first_time = false;
+
+			std::cout << "cur_out0: " << std::endl;
+			for (int i=0;i<16;i++) {
+				std::cout << cur_out0[i] << " ";
+			}
+			std::cout << std::endl;
+
+			std::cout << "peak_idx=" << peak_idx << " fx_sq_avg_ch_max[peak_idx]=" << fx_sq_avg_ch_max[peak_idx] << std::endl;
+			std::cout << "Phase=" << phase << std::endl;
+			std::cout << "noise_ampl: " << noise_ampl[0] << "    " << noise_ampl[1] << std::endl;
+			std::cout << "sig_ampl: " << sig_ampl[0] << "    " << sig_ampl[1] << std::endl;
+			std::cout << "Tau: " << tau << std::endl;
+			std::cout << "a_phase: " << a_phase << std::endl;
+			std::cout << "b_phase: " << b_phase << std::endl;
+			std::cout << "alpha: " << alpha << std::endl;
+			std::cout << "beta: " << beta << std::endl;
+
+		}
+		*/
+
 	} // end cur_block
 
 	// Tell runtime system how many output items we produced.
-	return noutput_items;
+	return (num_blocks * fft_size_time_avg);
 }
 
 } /* namespace xcorrelate */
