@@ -716,8 +716,8 @@ auto_polarization_impl::auto_polarization_impl(int fft_size, int fft_avg, float 
 	d_phase = 0.0;
 
 	// Create FFTs
-	d_fft0 = new gr::fft::fft_complex(d_fft_size*d_fft_avg);
-	d_fft1 = new gr::fft::fft_complex(d_fft_size*d_fft_avg);
+	d_fft0 = new gr::fft::fft_complex(d_fft_size);
+	d_fft1 = new gr::fft::fft_complex(d_fft_size);
 
 	// Create intermediate buffers
 	size_t mem_alignment = volk_get_alignment();
@@ -793,6 +793,8 @@ auto_polarization_impl::work(int noutput_items,
 	float noise_ampl[2];
 	float noise_ampl_sq[2];
 	float sig_ampl[2];
+
+	gr::thread::scoped_lock guard(d_setlock);
 
 	// loop through blocks of d_fft_size * d_fft_avg in case
 	// the scheduler sends us multiples
@@ -875,7 +877,7 @@ auto_polarization_impl::work(int noutput_items,
 		// fx_sq_avg_ch_max = np.max(fx_sq_avg/noise_ampl[...,np.newaxis]**2, axis = 0)
 		// Now find max between the two vectors and store it in fx_sq_avg_ch_max
 
-#pragma omp parallel for num_threads(4)
+		#pragma omp parallel for num_threads(4)
 		for (int i=0;i<d_fft_size;i++) {
 			float f0 = fx_sq_avg0[i] / noise_ampl_sq[0];
 			float f1 = fx_sq_avg1[i] / noise_ampl_sq[1];
@@ -898,7 +900,7 @@ auto_polarization_impl::work(int noutput_items,
 		volk_32fc_x2_multiply_conjugate_32fc(tmpbuf1, fft0_out, fft1_out, fft_size_time_avg);
 
 		// Now calc the average of the cross-product:
-#pragma omp parallel for num_threads(4)
+		#pragma omp parallel for num_threads(4)
 		for (int f=0;f<d_fft_size;f++) {
 			f_cross[f] = gr_complex(0.0,0.0);
 			for (int i=0;i<d_fft_avg;i++) {
