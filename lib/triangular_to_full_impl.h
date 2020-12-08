@@ -688,19 +688,18 @@ namespace gr {
      private:
     	int d_npol;
     	int d_num_inputs;
-    	int d_integration;
-    	int current_integ_cycle;
+    	int d_num_channels;
     	int d_num_baselines;
     	int matrix_flat_length;
-    	int row_size;
-    	int block_size;
     	gr_complex *full_matrix;
 
      public:
-      triangular_to_full_impl(int polarization, int num_inputs, int integration);
+      triangular_to_full_impl(int polarization, int num_inputs, int num_channels);
       ~triangular_to_full_impl();
 
       void handleMsg(pmt::pmt_t msg);
+
+      void xgpuExtractMatrix(gr_complex *matrix, const gr_complex *packed);
 
       // Where all the action really happens
       void forecast (int noutput_items, gr_vector_int &ninput_items_required);

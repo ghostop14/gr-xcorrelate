@@ -681,6 +681,11 @@
 
 #include <gnuradio/io_signature.h>
 #include "triangular_to_full_impl.h"
+#include <xcorrelate/xcomplexstruct.h>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 namespace gr {
 namespace xcorrelate {
@@ -696,24 +701,14 @@ triangular_to_full::make(int polarization, int num_inputs, int integration)
 /*
  * The private constructor
  */
-triangular_to_full_impl::triangular_to_full_impl(int polarization, int num_inputs, int integration)
+triangular_to_full_impl::triangular_to_full_impl(int polarization, int num_inputs, int num_channels)
 : gr::block("triangular_to_full",
 		gr::io_signature::make(0, 0, 0),
-		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_integration(integration)
+		gr::io_signature::make(0, 0, 0)), d_npol(polarization), d_num_inputs(num_inputs), d_num_channels(num_channels)
 {
 	d_num_baselines = (d_num_inputs+1)*d_num_inputs / 2;
-	matrix_flat_length = d_num_inputs*d_num_inputs*d_npol*d_npol;
+	matrix_flat_length = d_num_inputs*d_num_inputs*d_num_channels*d_npol*d_npol;
 	full_matrix = new gr_complex[matrix_flat_length];
-	current_integ_cycle = 0;
-
-	if (d_npol == 1) {
-		block_size = 1;
-	}
-	else {
-		block_size =4;
-	}
-
-	row_size = block_size * d_num_inputs;
 
 	message_port_register_in(pmt::mp("triang"));
 	set_msg_handler(pmt::mp("triang"),
@@ -727,6 +722,32 @@ triangular_to_full_impl::triangular_to_full_impl(int polarization, int num_input
 triangular_to_full_impl::~triangular_to_full_impl()
 {
 	delete[] full_matrix;
+}
+
+void triangular_to_full_impl::xgpuExtractMatrix(gr_complex *matrix_out, const gr_complex *packed_in) {
+	// Convert the common gr_complex pointers to XComplex where we have direct access to real and imag.
+	const XComplex *packed = (const XComplex *)packed_in;
+	XComplex *matrix = (XComplex *) matrix_out;
+
+	// This function comes from xGPU's cpu_util.c
+	int f, i, j, pol1, pol2;
+	#pragma omp parallel for num_threads(4)
+	for(f=0; f<d_num_channels; f++){
+		for(i=0; i<d_num_inputs; i++){
+			for (j=0; j<=i; j++) {
+				int k = f*(d_num_inputs+1)*(d_num_inputs/2) + i*(i+1)/2 + j;
+				for (pol1=0; pol1<d_npol; pol1++) {
+					for (pol2=0; pol2<d_npol; pol2++) {
+						int index = (k*d_npol+pol1)*d_npol+pol2;
+						matrix[(((f*d_num_inputs + i)*d_num_inputs + j)*d_npol + pol1)*d_npol+pol2].real = packed[index].real;
+						matrix[(((f*d_num_inputs + i)*d_num_inputs + j)*d_npol + pol1)*d_npol+pol2].imag = packed[index].imag;
+						matrix[(((f*d_num_inputs + j)*d_num_inputs + i)*d_npol + pol2)*d_npol+pol1].real =  packed[index].real;
+						matrix[(((f*d_num_inputs + j)*d_num_inputs + i)*d_npol + pol2)*d_npol+pol1].imag = -packed[index].imag;
+					}
+				}
+			}
+		}
+	}
 }
 
 void triangular_to_full_impl::handleMsg(pmt::pmt_t msg) {
@@ -750,49 +771,12 @@ void triangular_to_full_impl::handleMsg(pmt::pmt_t msg) {
 
 	const gr_complex* input_triang = (const gr_complex*)pmt::c32vector_elements(data, N);
 
-	// Handle integration
-	if (current_integ_cycle == 0) {
-		memset(full_matrix, 0x00, matrix_flat_length*sizeof(gr_complex));
-	}
+	xgpuExtractMatrix(full_matrix,input_triang);
 
-	current_integ_cycle++;
+	pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,full_matrix));
 
-	// Each row of the matrix will be contiguous in memory
-
-	for (int i=0;i<d_num_baselines;i++) {
-		// Calculate each station from the global index
-		// See apps/test_indices.py for printing the station pairs as calculated.
-		// This approach calculates the [row,col] pairs for a lower triangular matrix including the diagonal pair.
-		int f = i/d_num_baselines;
-		int k = i - f*d_num_baselines;
-		int station1 = -0.5 + sqrt(0.25 + 2*k);
-		int station2 = k - ((station1+1)*station1)/2;
-
-		int base_pos = station1*row_size + station2*block_size;
-		int conjugate_pos = station2*row_size + station1*block_size;
-
-		full_matrix[base_pos] += input_triang[i];
-		full_matrix[conjugate_pos] += std::conj(input_triang[i]);
-
-		if (d_npol > 1) {
-			full_matrix[base_pos + 1] += input_triang[i + 1];
-			full_matrix[base_pos + 2] += input_triang[i + 2];
-			full_matrix[base_pos + 3] += input_triang[i + 3];
-
-			full_matrix[conjugate_pos + 1] += std::conj(input_triang[i + 1]);
-			full_matrix[conjugate_pos + 2] += std::conj(input_triang[i + 2]);
-			full_matrix[conjugate_pos + 3] += std::conj(input_triang[i + 3]);
-		}
-	}
-
-	if (current_integ_cycle >= d_integration) {
-		pmt::pmt_t corr_out(pmt::init_c32vector(matrix_flat_length,full_matrix));
-
-		pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("full_matrix"), corr_out);
-		message_port_pub(pmt::mp("full"), pdu);
-
-		current_integ_cycle = 0;
-	}
+	pmt::pmt_t pdu = pmt::cons(pmt::string_to_symbol("full_matrix"), corr_out);
+	message_port_pub(pmt::mp("full"), pdu);
 }
 
 void

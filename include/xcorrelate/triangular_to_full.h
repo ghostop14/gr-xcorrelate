@@ -702,7 +702,14 @@ namespace gr {
        * class. xcorrelate::triangular_to_full::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int polarization, int num_inputs, int integration);
+      static sptr make(int polarization, int num_inputs, int num_channels);
+
+      /*!
+       * \brief Extract a full station*station*channels*pol*pol matrix from a lower triangular order matrix.
+       * \param matrix full output matrix
+       * \param packed input triangular order matrix
+       */
+      virtual void xgpuExtractMatrix(gr_complex *matrix, const gr_complex *packed) = 0;
     };
 
   } // namespace xcorrelate

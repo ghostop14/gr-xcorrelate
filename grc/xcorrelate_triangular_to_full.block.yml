@@ -11,18 +11,18 @@ parameters:
 - id: num_inputs
   label: Num Antennas
   dtype: int
-  default: '2'
-- id: integration
-  label: Integration N
+  default: '16'
+- id: num_channels
+  label: Number of Channels
   dtype: int
-  default: '1'
+  default: '1024'
 
 asserts:
 - ${ num_inputs > 1 }
 
 templates:
   imports: import xcorrelate
-  make: xcorrelate.triangular_to_full(${polarization}, ${num_inputs}, ${integration})
+  make: xcorrelate.triangular_to_full(${polarization}, ${num_inputs}, ${num_channels})
 
 inputs:
 - id: triang
