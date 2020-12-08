@@ -680,18 +680,13 @@
 
 #include <xcorrelate/xcorrelate_engine.h>
 #include <boost/thread/thread.hpp>
+#include <xcorrelate/xcomplexstruct.h>
 
 #define XCORR_TRIANGULAR_ORDER 1
 #define XCORR_FULL_MATRIX 2
 
 namespace gr {
 namespace xcorrelate {
-
-struct XComplexStruct {
-	float real = 0.0f;
-	float imag = 0.0f;
-};
-typedef struct XComplexStruct XComplex;
 
 class xcorrelate_engine_impl : public xcorrelate_engine
 {
