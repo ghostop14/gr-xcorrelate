@@ -717,8 +717,8 @@ auto_polarization_impl::auto_polarization_impl(int fft_size, int fft_avg, float 
 	d_fft_avg_as_float = (float)d_fft_avg;
 
 	// Create FFTs
-	d_fft0 = new gr::fft::fft_complex(d_fft_size);
-	d_fft1 = new gr::fft::fft_complex(d_fft_size);
+	d_fft0 = new gr::fft::fft_complex_fwd(d_fft_size);
+	d_fft1 = new gr::fft::fft_complex_fwd(d_fft_size);
 
 	// Calculate some values once.
 	sqrt_fft_size = sqrt((float)d_fft_size);
