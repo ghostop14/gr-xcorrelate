@@ -682,7 +682,7 @@
 #include <gnuradio/io_signature.h>
 #include "xcorrelate_fft_vcf2_impl.h"
 #include <volk/volk.h>
-#include <gnuradio/fft/fft_vcc.h>
+#include <gnuradio/fft/fft.h>
 
 namespace gr {
 namespace xcorrelate {
