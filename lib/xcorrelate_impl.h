@@ -75,7 +75,7 @@ namespace gr {
 
      public:
       xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-    		  int decim_frames, int num_outputs, bool async=false, bool normalize=true);
+    		  int decim_frames, int num_outputs, bool basync=false, bool normalize=true);
       virtual ~xcorrelate_impl();
 
       bool stop();

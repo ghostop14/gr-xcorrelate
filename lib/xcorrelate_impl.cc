@@ -31,10 +31,10 @@ namespace xcorrelate {
 
 xcorrelate::sptr
 xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size, int max_search_index,int decim_frames, int num_outputs,
-		bool async, bool normalize)
+		bool basync, bool normalize)
 {
 	return gnuradio::get_initial_sptr
-			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames, num_outputs, async, normalize));
+			(new xcorrelate_impl(num_inputs, signal_length, data_type, data_size, max_search_index, decim_frames, num_outputs, basync, normalize));
 }
 
 
@@ -42,12 +42,12 @@ xcorrelate::make(int num_inputs, int signal_length,int data_type, int data_size,
  * The private constructor
  */
 xcorrelate_impl::xcorrelate_impl(int num_inputs, int signal_length, int data_type, int data_size, int max_search_index,
-		int decim_frames, int num_outputs, bool async, bool normalize)
+		int decim_frames, int num_outputs, bool basync, bool normalize)
 : gr::sync_decimator("xcorrelate",
 		gr::io_signature::make(2, num_inputs, data_size),
 		gr::io_signature::make(0, num_outputs, sizeof(float)*2*signal_length),num_outputs==0?1:signal_length),
 		d_num_inputs(num_inputs), d_signal_length(signal_length), d_data_type(data_type),
-		d_data_size(data_size), d_decim_frames(decim_frames), max_shift(max_search_index), d_num_outputs(num_outputs), d_async(async),
+		d_data_size(data_size), d_decim_frames(decim_frames), max_shift(max_search_index), d_num_outputs(num_outputs), d_async(basync),
 		d_normalize(normalize), cur_frame_counter(1)
 {
 	if (data_size == 0) {
