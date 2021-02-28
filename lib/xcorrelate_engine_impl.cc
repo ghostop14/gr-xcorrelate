@@ -821,13 +821,26 @@ void xcorrelate_engine_impl::xcorrelate(XComplex *input_matrix, XComplex *cross_
 			XComplex inputRowX, inputRowY, inputColX, inputColY;
 
 			for(t=0; t<d_integration_time; t++){
+				// Had to adapt index lookups.  xGPU was expecting [t][freq][station][pol],
+				// But we have [t][station][freq][pol]
+				// So the index1/2 calcs are different than xGPU's
+				/*
 				inputRowX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol];
 				inputColX = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol];
+				*/
+				int index1 = t*frame_size + (station1 * d_num_channels + f) * d_npol;
+				int index2 = t*frame_size + (station2 * d_num_channels + f) * d_npol;
+				inputRowX = input_matrix[index1];
+				inputColX = input_matrix[index2];
 
 				cxmac(sumXX, inputRowX, inputColX);
 				if (d_npol > 1) {
+					/*
 					inputRowY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station1)*d_npol + 1];
 					inputColY = input_matrix[((t*d_num_channels + f)*d_num_inputs + station2)*d_npol + 1];
+					*/
+					inputRowY = input_matrix[index1 + 1];
+					inputColY = input_matrix[index2 + 1];
 
 					cxmac(sumXY, inputRowX, inputColY);
 					cxmac(sumYX, inputRowY, inputColX);
