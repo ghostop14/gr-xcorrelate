@@ -693,7 +693,7 @@ namespace gr {
     class XCORRELATE_API xcorrelate_engine : virtual public gr::sync_block
     {
      public:
-      typedef boost::shared_ptr<xcorrelate_engine> sptr;
+      typedef std::shared_ptr<xcorrelate_engine> sptr;
 
       /*!
        * \brief Return a shared_ptr to a new instance of xcorrelate::xcorrelate_engine.

@@ -682,7 +682,7 @@
 #include <gnuradio/io_signature.h>
 #include "xcorrelate_fft_vcf2_impl.h"
 #include <volk/volk.h>
-#include <gnuradio/fft/fft_vcc.h>
+#include <gnuradio/fft/fft.h>
 
 namespace gr {
 namespace xcorrelate {
@@ -709,7 +709,7 @@ xcorrelate_fft_vcf2_impl::xcorrelate_fft_vcf2_impl(int vlen)
 	vlen_2 = vlen/2;
 	data_size_2 = vlen_2 * sizeof(float);
 
-	rev_fft = new gr::fft::fft_complex(vlen, false, 1);
+	rev_fft = new gr::fft::fft_complex_rev(vlen);
 
 	message_port_register_out(pmt::mp("corrmsg"));
 }

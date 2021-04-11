@@ -692,7 +692,7 @@ namespace gr {
     class XCORRELATE_API xcorrelate_fft_vcf2 : virtual public gr::sync_block
     {
      public:
-      typedef boost::shared_ptr<xcorrelate_fft_vcf2> sptr;
+      typedef std::shared_ptr<xcorrelate_fft_vcf2> sptr;
 
       /*!
        * \brief Return a shared_ptr to a new instance of xcorrelate::xcorrelate_fft_vcf2.

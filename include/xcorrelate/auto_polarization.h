@@ -692,7 +692,7 @@ namespace gr {
     class XCORRELATE_API auto_polarization : virtual public gr::sync_block
     {
      public:
-      typedef boost::shared_ptr<auto_polarization> sptr;
+      typedef std::shared_ptr<auto_polarization> sptr;
 
       /*!
        * \brief Return a shared_ptr to a new instance of xcorrelate::auto_polarization.

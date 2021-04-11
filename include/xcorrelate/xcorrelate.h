@@ -35,7 +35,7 @@ namespace gr {
     class XCORRELATE_API xcorrelate : virtual public gr::sync_decimator
     {
      public:
-      typedef boost::shared_ptr<xcorrelate> sptr;
+      typedef std::shared_ptr<xcorrelate> sptr;
 
       /*!
        * \brief Make a cross-correlate block.

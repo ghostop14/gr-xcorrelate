@@ -692,7 +692,7 @@ namespace gr {
     class XCORRELATE_API triangular_to_full : virtual public gr::block
     {
      public:
-      typedef boost::shared_ptr<triangular_to_full> sptr;
+      typedef std::shared_ptr<triangular_to_full> sptr;
 
       /*!
        * \brief Return a shared_ptr to a new instance of xcorrelate::triangular_to_full.

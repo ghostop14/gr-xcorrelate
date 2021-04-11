@@ -694,8 +694,8 @@ private:
 	double d_sig_ampl[2];
 	double d_phase;
 
-	gr::fft::fft_complex *d_fft0=NULL;
-	gr::fft::fft_complex *d_fft1=NULL;
+	gr::fft::fft_complex_fwd *d_fft0=NULL;
+	gr::fft::fft_complex_fwd *d_fft1=NULL;
 
 	gr_complex *tmpbuf0;
 	gr_complex *tmpbuf1;

@@ -694,7 +694,7 @@ namespace gr {
 
       float *tmp_buffer;
 
-      gr::fft::fft_complex* rev_fft;
+      gr::fft::fft_complex_rev* rev_fft;
       std::vector<float> d_window;
 
      public:
