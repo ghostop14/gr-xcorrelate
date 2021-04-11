@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Free Software Foundation, Inc.
+ * Copyright 2021 Free Software Foundation, Inc.
  *
  * This file is part of GNU Radio
  *
@@ -14,7 +14,7 @@
 /* BINDTOOL_GEN_AUTOMATIC(0)                                                       */
 /* BINDTOOL_USE_PYGCCXML(0)                                                        */
 /* BINDTOOL_HEADER_FILE(xcorrelate.h)                                        */
-/* BINDTOOL_HEADER_FILE_HASH(f0ede94f918e2c7d1d8bf4cc58d83050)                     */
+/* BINDTOOL_HEADER_FILE_HASH(f8598701e55831b4439a472ea7b6349d)                     */
 /***********************************************************************************/
 
 #include <pybind11/complex.h>
@@ -44,7 +44,7 @@ void bind_xcorrelate(py::module& m)
            py::arg("max_search_index"),
            py::arg("decim_frames"),
            py::arg("num_outputs"),
-           py::arg("async") = false,
+           py::arg("basync") = false,
            py::arg("normalize") = true,
            D(xcorrelate,make)
         )
