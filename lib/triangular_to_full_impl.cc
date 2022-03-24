@@ -711,8 +711,7 @@ triangular_to_full_impl::triangular_to_full_impl(int polarization, int num_input
 	full_matrix = new gr_complex[matrix_flat_length];
 
 	message_port_register_in(pmt::mp("triang"));
-	set_msg_handler(pmt::mp("triang"),
-			std::bind(&triangular_to_full_impl::handleMsg, this, std::placeholders::_1));
+    set_msg_handler(pmt::mp("triang"), [this](pmt::pmt_t msg) { this->handleMsg(msg); });
 	message_port_register_out(pmt::mp("full"));
 }
 
