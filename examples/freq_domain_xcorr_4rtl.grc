@@ -1,6 +1,7 @@
 options:
   parameters:
     author: ghostop14
+    catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
     comment: ''
@@ -183,7 +184,7 @@ blocks:
     gui_hint: 0,1,1,1
     label: Gain
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: float
     start: '0'
     step: '2'
@@ -204,7 +205,7 @@ blocks:
     gui_hint: 0,2,1,1
     label: Induced Lag
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: int
     start: '-20'
     step: '1'
@@ -266,7 +267,7 @@ blocks:
     gui_hint: 0,3,1,1
     label: Volume
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: float
     start: '0'
     step: '0.2'
@@ -287,6 +288,7 @@ blocks:
     alias: ''
     audio_decimation: '10'
     comment: Quadrature rate is the input rate
+    deemph_tau: 75e-6
     maxoutbuf: '0'
     minoutbuf: '0'
     quad_rate: int(samp_rate/stage1_decimation)
@@ -881,7 +883,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: int(window.WIN_HAMMING)
   states:
     bus_sink: false
     bus_source: false
@@ -905,7 +907,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: int(window.WIN_HAMMING)
   states:
     bus_sink: false
     bus_source: false
@@ -929,7 +931,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: int(window.WIN_HAMMING)
   states:
     bus_sink: false
     bus_source: false
@@ -953,7 +955,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: int(window.WIN_HAMMING)
   states:
     bus_sink: false
     bus_source: false
@@ -975,6 +977,7 @@ blocks:
     minoutbuf: '0'
     ref_scale: '2'
     sample_rate: samp_rate
+    shift: 'False'
     type: complex
   states:
     bus_sink: false
@@ -997,6 +1000,7 @@ blocks:
     minoutbuf: '0'
     ref_scale: '2'
     sample_rate: samp_rate
+    shift: 'False'
     type: complex
   states:
     bus_sink: false
@@ -1268,6 +1272,7 @@ blocks:
     label7: ''
     label8: ''
     label9: ''
+    legend: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
     name: '""'
@@ -2916,3 +2921,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: v3.11.0.0git-55-g8526e6f8

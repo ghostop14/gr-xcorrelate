@@ -26,8 +26,8 @@
 
 #include <cppunit/TextTestRunner.h>
 #include <cppunit/XmlOutputter.h>
-
-#include <gnuradio/unittests.h>
+#include <iomanip>
+//#include <gnuradio/unittests.h>
 #include <gnuradio/block.h>
 #include <iostream>
 #include <fstream>

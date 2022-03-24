@@ -21,3 +21,6 @@ except ModuleNotFoundError:
 
 # import any pure python here
 #
+from .VectorMaxIndexToVar import VectorMaxIndexToVar
+from .ExtractDelay import ExtractDelay
+from .xcorrelate_fft_vcf import xcorrelate_fft_vcf
