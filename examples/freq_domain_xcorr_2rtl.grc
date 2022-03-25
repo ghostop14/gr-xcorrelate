@@ -1,6 +1,7 @@
 options:
   parameters:
     author: ghostop14
+    catch_exceptions: 'True'
     category: '[GRC Hier Blocks]'
     cmake_opt: ''
     comment: ''
@@ -127,7 +128,7 @@ blocks:
     gui_hint: 0,1,1,1
     label: Gain
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: float
     start: '0'
     step: '2'
@@ -148,7 +149,7 @@ blocks:
     gui_hint: 0,2,1,1
     label: Induced Lag
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: int
     start: '-20'
     step: '1'
@@ -210,7 +211,7 @@ blocks:
     gui_hint: 0,3,1,1
     label: Volume
     min_len: '200'
-    orient: Qt.Horizontal
+    orient: QtCore.Qt.Horizontal
     rangeType: float
     start: '0'
     step: '0.2'
@@ -231,6 +232,7 @@ blocks:
     alias: ''
     audio_decimation: '10'
     comment: Quadrature rate is the input rate
+    deemph_tau: 75e-6
     maxoutbuf: '0'
     minoutbuf: '0'
     quad_rate: int(samp_rate/stage1_decimation)
@@ -574,7 +576,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [216, 476.0]
+    coordinate: [272, 484.0]
     rotation: 0
     state: true
 - name: fft_vxx_0
@@ -640,8 +642,8 @@ blocks:
     coordinate: [1064, 220.0]
     rotation: 0
     state: enabled
-- name: lfast_low_pass_filter_0_0
-  id: lfast_low_pass_filter
+- name: filter_fft_low_pass_filter_0
+  id: filter_fft_low_pass_filter
   parameters:
     affinity: ''
     alias: ''
@@ -656,16 +658,16 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [288, 300.0]
+    coordinate: [448, 628.0]
     rotation: 0
-    state: enabled
-- name: lfast_low_pass_filter_0_0_0
-  id: lfast_low_pass_filter
+    state: true
+- name: filter_fft_low_pass_filter_0_0
+  id: filter_fft_low_pass_filter
   parameters:
     affinity: ''
     alias: ''
@@ -680,14 +682,14 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [264, 572.0]
+    coordinate: [328, 316.0]
     rotation: 0
-    state: enabled
+    state: true
 - name: qtgui_time_sink_x_0
   id: qtgui_time_sink_x
   parameters:
@@ -825,6 +827,7 @@ blocks:
     label7: ''
     label8: ''
     label9: ''
+    legend: 'True'
     maxoutbuf: '0'
     minoutbuf: '0'
     name: '""'
@@ -1631,20 +1634,21 @@ connections:
 - [blocks_stream_to_vector_0_1, '0', blocks_keep_one_in_n_1, '0']
 - [blocks_stream_to_vector_0_1, '0', qtgui_vector_sink_f_0, '0']
 - [blocks_vector_to_stream_1, '0', blocks_deinterleave_1, '0']
-- [correctiq_correctiq_auto_0_0_0_0, '0', lfast_low_pass_filter_0_0, '0']
-- [correctiq_correctiq_auto_0_0_0_0_0, '0', lfast_low_pass_filter_0_0_0, '0']
+- [correctiq_correctiq_auto_0_0_0_0, '0', filter_fft_low_pass_filter_0_0, '0']
+- [correctiq_correctiq_auto_0_0_0_0_0, '0', filter_fft_low_pass_filter_0, '0']
 - [fft_vxx_0, '0', blocks_multiply_conjugate_cc_0_0, '0']
 - [fft_vxx_0_0, '0', blocks_multiply_conjugate_cc_0_0, '1']
 - [fft_vxx_0_1, '0', blocks_complex_to_mag_1, '0']
-- [lfast_low_pass_filter_0_0, '0', blocks_add_xx_0, '0']
-- [lfast_low_pass_filter_0_0, '0', blocks_complex_to_mag_0, '0']
-- [lfast_low_pass_filter_0_0, '0', blocks_stream_to_vector_0, '0']
-- [lfast_low_pass_filter_0_0_0, '0', blocks_complex_to_mag_0_0, '0']
-- [lfast_low_pass_filter_0_0_0, '0', blocks_delay_1, '0']
-- [lfast_low_pass_filter_0_0_0, '0', blocks_stream_to_vector_0_0, '0']
+- [filter_fft_low_pass_filter_0, '0', blocks_complex_to_mag_0_0, '0']
+- [filter_fft_low_pass_filter_0, '0', blocks_delay_1, '0']
+- [filter_fft_low_pass_filter_0, '0', blocks_stream_to_vector_0_0, '0']
+- [filter_fft_low_pass_filter_0_0, '0', blocks_add_xx_0, '0']
+- [filter_fft_low_pass_filter_0_0, '0', blocks_complex_to_mag_0, '0']
+- [filter_fft_low_pass_filter_0_0, '0', blocks_stream_to_vector_0, '0']
 - [rational_resampler_xxx_0_0, '0', blocks_multiply_const_vxx_0, '0']
 - [rtlsdr_source_0, '0', correctiq_correctiq_auto_0_0_0_0, '0']
 - [rtlsdr_source_0_0, '0', correctiq_correctiq_auto_0_0_0_0_0, '0']
 
 metadata:
   file_format: 1
+  grc_version: v3.11.0.0git-55-g8526e6f8

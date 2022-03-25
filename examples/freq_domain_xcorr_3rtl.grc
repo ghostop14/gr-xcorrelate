@@ -668,7 +668,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
@@ -692,7 +692,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false
@@ -716,7 +716,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: filter_cutoff*.1
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false

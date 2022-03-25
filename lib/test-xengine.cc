@@ -26,7 +26,7 @@
 
 #include <cppunit/TextTestRunner.h>
 #include <cppunit/XmlOutputter.h>
-
+#include <iomanip>
 #include <gnuradio/block.h>
 #include <iostream>
 #include <fstream>

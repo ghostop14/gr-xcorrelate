@@ -22,6 +22,9 @@ add_subdirectory(bindings)
 GR_PYTHON_INSTALL(
     FILES
     __init__.py
+    ExtractDelay.py
+    VectorMaxIndexToVar.py
+    xcorrelate_fft_vcf.py
     DESTINATION ${GR_PYTHON_DIR}/xcorrelate
 )
 

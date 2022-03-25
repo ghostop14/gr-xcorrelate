@@ -298,7 +298,7 @@ blocks:
     samp_rate: samp_rate
     type: ccc
     width: 10e3
-    win: firdes.WIN_HAMMING
+    win: window.WIN_HAMMING
   states:
     bus_sink: false
     bus_source: false

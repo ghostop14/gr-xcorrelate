@@ -682,7 +682,7 @@
 #include <gnuradio/io_signature.h>
 #include "triangular_to_full_impl.h"
 #include <xcorrelate/xcomplexstruct.h>
-
+#include <functional>
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -711,8 +711,7 @@ triangular_to_full_impl::triangular_to_full_impl(int polarization, int num_input
 	full_matrix = new gr_complex[matrix_flat_length];
 
 	message_port_register_in(pmt::mp("triang"));
-	set_msg_handler(pmt::mp("triang"),
-			boost::bind(&triangular_to_full_impl::handleMsg, this, _1));
+    set_msg_handler(pmt::mp("triang"), [this](pmt::pmt_t msg) { this->handleMsg(msg); });
 	message_port_register_out(pmt::mp("full"));
 }
 
